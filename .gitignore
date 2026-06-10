@@ -1,0 +1,32 @@
+# DeepFace model weights (~1GB)
+.deepface/
+
+# Test data batch 2
+test2/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Production logs
+production/
