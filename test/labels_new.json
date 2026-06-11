@@ -2,19 +2,19 @@
   "metadata": {
     "tool": "F5 Gender & Race Auto-Labeling Tool",
     "model": "deepface",
-    "detector_backend": "mtcnn",
-    "conf_threshold": 0.6,
+    "detector_backend": "retinaface",
+    "conf_threshold": 0.7,
     "total_images": 34,
-    "total_faces": 36,
-    "elapsed_seconds": 51.98,
-    "fps": 0.65
+    "total_faces": 35,
+    "elapsed_seconds": 144.64,
+    "fps": 0.24
   },
   "statistics": {
-    "male": 20,
+    "male": 19,
     "female": 16,
     "unknown_gender": 0,
     "asian": 0,
-    "white": 19,
+    "white": 18,
     "middle_eastern": 0,
     "indian": 0,
     "latino": 0,
@@ -29,28 +29,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 146,
-          "y1": 131,
-          "x2": 472,
-          "y2": 573,
-          "det_score": 0.8602,
+          "x1": 129,
+          "y1": 119,
+          "x2": 482,
+          "y2": 579,
+          "det_score": 0.8875,
           "gender": 0,
           "gender_label": "Female",
-          "gender_conf": 0.8602,
+          "gender_conf": 0.8875,
           "raw_gender_scores": {
-            "Woman": 0.8602,
-            "Man": 0.1398
+            "Woman": 0.8875,
+            "Man": 0.1125
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.8806,
+          "race_conf": 0.9529,
           "raw_race_scores": {
-            "asian": 0.0037,
-            "indian": 0.0007,
+            "asian": 0.0013,
+            "indian": 0.0001,
             "black": 0.0,
-            "white": 0.8806,
-            "middle eastern": 0.0752,
-            "latino hispanic": 0.0397
+            "white": 0.9529,
+            "middle eastern": 0.0297,
+            "latino hispanic": 0.016
           }
         }
       ]
@@ -61,10 +61,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 187,
-          "y1": 109,
-          "x2": 514,
-          "y2": 605,
+          "x1": 181,
+          "y1": 107,
+          "x2": 544,
+          "y2": 599,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -75,14 +75,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.967,
+          "race_conf": 0.9747,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.967,
-            "middle eastern": 0.0123,
-            "latino hispanic": 0.0207
+            "white": 0.9747,
+            "middle eastern": 0.0097,
+            "latino hispanic": 0.0155
           }
         }
       ]
@@ -90,56 +90,31 @@
     {
       "image_path": "celeb_28104.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28104.jpg",
-      "face_count": 2,
+      "face_count": 1,
       "faces": [
         {
-          "x1": 92,
-          "y1": 167,
-          "x2": 421,
-          "y2": 582,
-          "det_score": 0.9952,
+          "x1": 84,
+          "y1": 149,
+          "x2": 418,
+          "y2": 596,
+          "det_score": 0.996,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9952,
+          "gender_conf": 0.996,
           "raw_gender_scores": {
-            "Woman": 0.0048,
-            "Man": 0.9952
+            "Woman": 0.004,
+            "Man": 0.996
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9956,
+          "race_conf": 0.9969,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9956,
-            "middle eastern": 0.003,
-            "latino hispanic": 0.0013
-          }
-        },
-        {
-          "x1": 452,
-          "y1": 347,
-          "x2": 543,
-          "y2": 456,
-          "det_score": 0.6635,
-          "gender": 1,
-          "gender_label": "Male",
-          "gender_conf": 0.6635,
-          "raw_gender_scores": {
-            "Woman": 0.3365,
-            "Man": 0.6635
-          },
-          "race": 6,
-          "race_label": "Unknown",
-          "race_conf": 0.2674,
-          "raw_race_scores": {
-            "asian": 0.1051,
-            "indian": 0.082,
-            "black": 0.1691,
-            "white": 0.1899,
-            "middle eastern": 0.2674,
-            "latino hispanic": 0.1866
+            "white": 0.9969,
+            "middle eastern": 0.0023,
+            "latino hispanic": 0.0009
           }
         }
       ]
@@ -150,28 +125,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 103,
-          "y1": 121,
-          "x2": 484,
-          "y2": 611,
-          "det_score": 0.9946,
+          "x1": 114,
+          "y1": 124,
+          "x2": 488,
+          "y2": 602,
+          "det_score": 0.9965,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9946,
+          "gender_conf": 0.9965,
           "raw_gender_scores": {
-            "Woman": 0.0054,
-            "Man": 0.9946
+            "Woman": 0.0035,
+            "Man": 0.9965
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.6618,
+          "race_conf": 0.7607,
           "raw_race_scores": {
-            "asian": 0.0082,
-            "indian": 0.0096,
-            "black": 0.0019,
-            "white": 0.6618,
-            "middle eastern": 0.1366,
-            "latino hispanic": 0.1819
+            "asian": 0.0028,
+            "indian": 0.0035,
+            "black": 0.0006,
+            "white": 0.7607,
+            "middle eastern": 0.0967,
+            "latino hispanic": 0.1357
           }
         }
       ]
@@ -182,10 +157,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 187,
-          "y1": 106,
-          "x2": 540,
-          "y2": 597,
+          "x1": 191,
+          "y1": 99,
+          "x2": 546,
+          "y2": 627,
           "det_score": 1.0,
           "gender": 1,
           "gender_label": "Male",
@@ -196,14 +171,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9966,
+          "race_conf": 0.9998,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9966,
-            "middle eastern": 0.0011,
-            "latino hispanic": 0.0023
+            "white": 0.9998,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0001
           }
         }
       ]
@@ -214,10 +189,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 157,
-          "y1": 133,
-          "x2": 481,
-          "y2": 571,
+          "x1": 149,
+          "y1": 118,
+          "x2": 477,
+          "y2": 576,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -228,14 +203,14 @@
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.4127,
+          "race_conf": 0.5371,
           "raw_race_scores": {
-            "asian": 0.1757,
-            "indian": 0.0283,
-            "black": 0.0068,
-            "white": 0.4127,
-            "middle eastern": 0.1097,
-            "latino hispanic": 0.2669
+            "asian": 0.0594,
+            "indian": 0.0149,
+            "black": 0.0029,
+            "white": 0.5371,
+            "middle eastern": 0.1086,
+            "latino hispanic": 0.2771
           }
         }
       ]
@@ -246,28 +221,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 137,
-          "y1": 164,
-          "x2": 450,
+          "x1": 151,
+          "y1": 151,
+          "x2": 479,
           "y2": 559,
-          "det_score": 0.9982,
+          "det_score": 0.9978,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9982,
+          "gender_conf": 0.9978,
           "raw_gender_scores": {
-            "Woman": 0.0018,
-            "Man": 0.9982
+            "Woman": 0.0022,
+            "Man": 0.9978
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.377,
+          "race_conf": 0.3163,
           "raw_race_scores": {
-            "asian": 0.0302,
-            "indian": 0.0501,
-            "black": 0.0106,
-            "white": 0.377,
-            "middle eastern": 0.251,
-            "latino hispanic": 0.2811
+            "asian": 0.0124,
+            "indian": 0.0766,
+            "black": 0.0078,
+            "white": 0.3163,
+            "middle eastern": 0.3128,
+            "latino hispanic": 0.2741
           }
         }
       ]
@@ -278,10 +253,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 147,
-          "y1": 135,
-          "x2": 473,
-          "y2": 563,
+          "x1": 143,
+          "y1": 113,
+          "x2": 466,
+          "y2": 566,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -292,14 +267,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9301,
+          "race_conf": 0.9895,
           "raw_race_scores": {
-            "asian": 0.0001,
-            "indian": 0.0001,
+            "asian": 0.0,
+            "indian": 0.0,
             "black": 0.0,
-            "white": 0.9301,
-            "middle eastern": 0.0314,
-            "latino hispanic": 0.0383
+            "white": 0.9895,
+            "middle eastern": 0.0025,
+            "latino hispanic": 0.008
           }
         }
       ]
@@ -310,28 +285,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 140,
-          "y1": 108,
-          "x2": 479,
-          "y2": 581,
-          "det_score": 0.9973,
+          "x1": 135,
+          "y1": 105,
+          "x2": 484,
+          "y2": 610,
+          "det_score": 0.9946,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9973,
+          "gender_conf": 0.9946,
           "raw_gender_scores": {
-            "Woman": 0.0027,
-            "Man": 0.9973
+            "Woman": 0.0054,
+            "Man": 0.9946
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9997,
+          "race_conf": 0.9993,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9997,
-            "middle eastern": 0.0001,
-            "latino hispanic": 0.0002
+            "white": 0.9993,
+            "middle eastern": 0.0002,
+            "latino hispanic": 0.0005
           }
         }
       ]
@@ -342,10 +317,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 153,
+          "x1": 150,
           "y1": 102,
-          "x2": 492,
-          "y2": 598,
+          "x2": 501,
+          "y2": 627,
           "det_score": 1.0,
           "gender": 1,
           "gender_label": "Male",
@@ -356,14 +331,14 @@
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.5003,
+          "race_conf": 0.4663,
           "raw_race_scores": {
-            "asian": 0.0063,
-            "indian": 0.0827,
-            "black": 0.0127,
-            "white": 0.2207,
-            "middle eastern": 0.5003,
-            "latino hispanic": 0.1771
+            "asian": 0.0017,
+            "indian": 0.0346,
+            "black": 0.0041,
+            "white": 0.319,
+            "middle eastern": 0.4663,
+            "latino hispanic": 0.1742
           }
         }
       ]
@@ -374,10 +349,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 170,
-          "y1": 78,
-          "x2": 553,
-          "y2": 593,
+          "x1": 175,
+          "y1": 102,
+          "x2": 556,
+          "y2": 597,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -386,16 +361,16 @@
             "Woman": 1.0,
             "Man": 0.0
           },
-          "race": 1,
-          "race_label": "White",
-          "race_conf": 0.6707,
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.4912,
           "raw_race_scores": {
-            "asian": 0.0199,
-            "indian": 0.0413,
-            "black": 0.0094,
-            "white": 0.6707,
-            "middle eastern": 0.0897,
-            "latino hispanic": 0.1689
+            "asian": 0.0234,
+            "indian": 0.1077,
+            "black": 0.0265,
+            "white": 0.4912,
+            "middle eastern": 0.1091,
+            "latino hispanic": 0.2421
           }
         }
       ]
@@ -406,28 +381,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 146,
-          "y1": 127,
-          "x2": 462,
-          "y2": 586,
-          "det_score": 0.9994,
+          "x1": 136,
+          "y1": 106,
+          "x2": 478,
+          "y2": 630,
+          "det_score": 0.9989,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9994,
+          "gender_conf": 0.9989,
           "raw_gender_scores": {
-            "Woman": 0.0006,
-            "Man": 0.9994
+            "Woman": 0.0011,
+            "Man": 0.9989
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9937,
+          "race_conf": 0.9999,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9937,
-            "middle eastern": 0.0024,
-            "latino hispanic": 0.0039
+            "white": 0.9999,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0001
           }
         }
       ]
@@ -438,28 +413,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 148,
-          "y1": 107,
-          "x2": 522,
-          "y2": 594,
-          "det_score": 0.9995,
+          "x1": 162,
+          "y1": 98,
+          "x2": 514,
+          "y2": 621,
+          "det_score": 0.9994,
           "gender": 0,
           "gender_label": "Female",
-          "gender_conf": 0.9995,
+          "gender_conf": 0.9994,
           "raw_gender_scores": {
-            "Woman": 0.9995,
-            "Man": 0.0005
+            "Woman": 0.9994,
+            "Man": 0.0006
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.437,
+          "race_conf": 0.5165,
           "raw_race_scores": {
-            "asian": 0.437,
-            "indian": 0.031,
-            "black": 0.0158,
-            "white": 0.3,
-            "middle eastern": 0.0834,
-            "latino hispanic": 0.1328
+            "asian": 0.5165,
+            "indian": 0.0392,
+            "black": 0.0223,
+            "white": 0.2047,
+            "middle eastern": 0.0683,
+            "latino hispanic": 0.1491
           }
         }
       ]
@@ -470,10 +445,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 140,
-          "y1": 126,
-          "x2": 470,
-          "y2": 583,
+          "x1": 145,
+          "y1": 113,
+          "x2": 475,
+          "y2": 612,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -484,14 +459,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9997,
+          "race_conf": 0.9983,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9997,
-            "middle eastern": 0.0001,
-            "latino hispanic": 0.0003
+            "white": 0.9983,
+            "middle eastern": 0.0002,
+            "latino hispanic": 0.0014
           }
         }
       ]
@@ -502,28 +477,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 175,
-          "y1": 112,
-          "x2": 505,
-          "y2": 585,
-          "det_score": 0.9819,
+          "x1": 162,
+          "y1": 102,
+          "x2": 511,
+          "y2": 602,
+          "det_score": 0.9626,
           "gender": 0,
           "gender_label": "Female",
-          "gender_conf": 0.9819,
+          "gender_conf": 0.9626,
           "raw_gender_scores": {
-            "Woman": 0.9819,
-            "Man": 0.0181
+            "Woman": 0.9626,
+            "Man": 0.0374
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.2654,
+          "race_conf": 0.2745,
           "raw_race_scores": {
-            "asian": 0.2135,
-            "indian": 0.1354,
-            "black": 0.2234,
-            "white": 0.0946,
-            "middle eastern": 0.0678,
-            "latino hispanic": 0.2654
+            "asian": 0.1955,
+            "indian": 0.1226,
+            "black": 0.1951,
+            "white": 0.1297,
+            "middle eastern": 0.0826,
+            "latino hispanic": 0.2745
           }
         }
       ]
@@ -534,10 +509,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 147,
-          "y1": 116,
-          "x2": 478,
-          "y2": 579,
+          "x1": 135,
+          "y1": 102,
+          "x2": 476,
+          "y2": 570,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -548,14 +523,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.8956,
+          "race_conf": 0.9493,
           "raw_race_scores": {
-            "asian": 0.0001,
-            "indian": 0.0002,
+            "asian": 0.0,
+            "indian": 0.0,
             "black": 0.0,
-            "white": 0.8956,
-            "middle eastern": 0.0561,
-            "latino hispanic": 0.048
+            "white": 0.9493,
+            "middle eastern": 0.0265,
+            "latino hispanic": 0.0241
           }
         }
       ]
@@ -566,35 +541,10 @@
       "face_count": 2,
       "faces": [
         {
-          "x1": 511,
-          "y1": 163,
-          "x2": 630,
-          "y2": 317,
-          "det_score": 0.7407,
-          "gender": 1,
-          "gender_label": "Male",
-          "gender_conf": 0.7407,
-          "raw_gender_scores": {
-            "Woman": 0.2593,
-            "Man": 0.7407
-          },
-          "race": 6,
-          "race_label": "Unknown",
-          "race_conf": 0.4366,
-          "raw_race_scores": {
-            "asian": 0.1413,
-            "indian": 0.1628,
-            "black": 0.4366,
-            "white": 0.0508,
-            "middle eastern": 0.0694,
-            "latino hispanic": 0.1393
-          }
-        },
-        {
-          "x1": 152,
-          "y1": 118,
-          "x2": 473,
-          "y2": 563,
+          "x1": 140,
+          "y1": 111,
+          "x2": 491,
+          "y2": 598,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -605,14 +555,39 @@
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.397,
+          "race_conf": 0.5062,
           "raw_race_scores": {
-            "asian": 0.0617,
-            "indian": 0.0368,
-            "black": 0.0108,
-            "white": 0.3634,
-            "middle eastern": 0.1303,
-            "latino hispanic": 0.397
+            "asian": 0.0179,
+            "indian": 0.022,
+            "black": 0.0035,
+            "white": 0.5062,
+            "middle eastern": 0.2113,
+            "latino hispanic": 0.2392
+          }
+        },
+        {
+          "x1": 515,
+          "y1": 165,
+          "x2": 632,
+          "y2": 347,
+          "det_score": 0.7323,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.7323,
+          "raw_gender_scores": {
+            "Woman": 0.2677,
+            "Man": 0.7323
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.195,
+          "raw_race_scores": {
+            "asian": 0.195,
+            "indian": 0.1672,
+            "black": 0.0989,
+            "white": 0.1613,
+            "middle eastern": 0.1874,
+            "latino hispanic": 0.1902
           }
         }
       ]
@@ -623,10 +598,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 132,
-          "y1": 97,
-          "x2": 469,
-          "y2": 586,
+          "x1": 129,
+          "y1": 105,
+          "x2": 476,
+          "y2": 618,
           "det_score": 1.0,
           "gender": 1,
           "gender_label": "Male",
@@ -655,28 +630,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 206,
-          "y1": 104,
-          "x2": 558,
-          "y2": 610,
-          "det_score": 0.9869,
+          "x1": 195,
+          "y1": 110,
+          "x2": 563,
+          "y2": 604,
+          "det_score": 0.9912,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9869,
+          "gender_conf": 0.9912,
           "raw_gender_scores": {
-            "Woman": 0.0131,
-            "Man": 0.9869
+            "Woman": 0.0088,
+            "Man": 0.9912
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.3335,
+          "race_conf": 0.3447,
           "raw_race_scores": {
-            "asian": 0.0236,
-            "indian": 0.0636,
-            "black": 0.0083,
-            "white": 0.3277,
-            "middle eastern": 0.3335,
-            "latino hispanic": 0.2433
+            "asian": 0.0227,
+            "indian": 0.085,
+            "black": 0.0116,
+            "white": 0.2879,
+            "middle eastern": 0.3447,
+            "latino hispanic": 0.2481
           }
         }
       ]
@@ -688,27 +663,27 @@
       "faces": [
         {
           "x1": 131,
-          "y1": 88,
-          "x2": 477,
-          "y2": 586,
-          "det_score": 0.9633,
+          "y1": 87,
+          "x2": 472,
+          "y2": 585,
+          "det_score": 0.9517,
           "gender": 0,
           "gender_label": "Female",
-          "gender_conf": 0.9633,
+          "gender_conf": 0.9517,
           "raw_gender_scores": {
-            "Woman": 0.9633,
-            "Man": 0.0367
+            "Woman": 0.9517,
+            "Man": 0.0483
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.3827,
+          "race_conf": 0.4332,
           "raw_race_scores": {
-            "asian": 0.3827,
-            "indian": 0.0466,
-            "black": 0.0191,
-            "white": 0.2606,
-            "middle eastern": 0.0621,
-            "latino hispanic": 0.2289
+            "asian": 0.4332,
+            "indian": 0.0355,
+            "black": 0.015,
+            "white": 0.2677,
+            "middle eastern": 0.0543,
+            "latino hispanic": 0.1944
           }
         }
       ]
@@ -719,28 +694,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 129,
-          "y1": 122,
-          "x2": 480,
-          "y2": 587,
-          "det_score": 0.9955,
+          "x1": 123,
+          "y1": 145,
+          "x2": 464,
+          "y2": 582,
+          "det_score": 0.996,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9955,
+          "gender_conf": 0.996,
           "raw_gender_scores": {
-            "Woman": 0.0045,
-            "Man": 0.9955
+            "Woman": 0.004,
+            "Man": 0.996
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.6262,
+          "race_conf": 0.7379,
           "raw_race_scores": {
-            "asian": 0.0088,
-            "indian": 0.011,
-            "black": 0.0018,
-            "white": 0.6262,
-            "middle eastern": 0.1841,
-            "latino hispanic": 0.1681
+            "asian": 0.0041,
+            "indian": 0.0048,
+            "black": 0.0007,
+            "white": 0.7379,
+            "middle eastern": 0.1408,
+            "latino hispanic": 0.1117
           }
         }
       ]
@@ -751,10 +726,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 161,
-          "y1": 124,
-          "x2": 492,
-          "y2": 583,
+          "x1": 147,
+          "y1": 103,
+          "x2": 497,
+          "y2": 597,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -765,14 +740,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.916,
+          "race_conf": 0.9074,
           "raw_race_scores": {
-            "asian": 0.0004,
+            "asian": 0.0006,
             "indian": 0.0001,
             "black": 0.0,
-            "white": 0.916,
-            "middle eastern": 0.017,
-            "latino hispanic": 0.0664
+            "white": 0.9074,
+            "middle eastern": 0.016,
+            "latino hispanic": 0.0759
           }
         }
       ]
@@ -783,17 +758,17 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 168,
-          "y1": 137,
-          "x2": 489,
-          "y2": 563,
-          "det_score": 0.9988,
+          "x1": 182,
+          "y1": 123,
+          "x2": 510,
+          "y2": 592,
+          "det_score": 0.9968,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9988,
+          "gender_conf": 0.9968,
           "raw_gender_scores": {
-            "Woman": 0.0012,
-            "Man": 0.9988
+            "Woman": 0.0032,
+            "Man": 0.9968
           },
           "race": 5,
           "race_label": "Black",
@@ -815,10 +790,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 170,
-          "y1": 123,
-          "x2": 490,
-          "y2": 576,
+          "x1": 176,
+          "y1": 129,
+          "x2": 484,
+          "y2": 572,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -829,14 +804,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.8511,
+          "race_conf": 0.8202,
           "raw_race_scores": {
-            "asian": 0.0001,
-            "indian": 0.0006,
-            "black": 0.0,
-            "white": 0.8511,
-            "middle eastern": 0.0591,
-            "latino hispanic": 0.089
+            "asian": 0.0002,
+            "indian": 0.0008,
+            "black": 0.0001,
+            "white": 0.8202,
+            "middle eastern": 0.0705,
+            "latino hispanic": 0.1083
           }
         }
       ]
@@ -847,10 +822,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 129,
-          "y1": 164,
-          "x2": 462,
-          "y2": 583,
+          "x1": 134,
+          "y1": 163,
+          "x2": 470,
+          "y2": 595,
           "det_score": 0.9975,
           "gender": 1,
           "gender_label": "Male",
@@ -861,14 +836,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.7975,
+          "race_conf": 0.7615,
           "raw_race_scores": {
-            "asian": 0.0032,
-            "indian": 0.0033,
-            "black": 0.0003,
-            "white": 0.7975,
-            "middle eastern": 0.0861,
-            "latino hispanic": 0.1096
+            "asian": 0.0037,
+            "indian": 0.0039,
+            "black": 0.0005,
+            "white": 0.7615,
+            "middle eastern": 0.0949,
+            "latino hispanic": 0.1355
           }
         }
       ]
@@ -879,28 +854,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 155,
-          "y1": 129,
-          "x2": 507,
-          "y2": 587,
-          "det_score": 0.9777,
+          "x1": 168,
+          "y1": 107,
+          "x2": 510,
+          "y2": 600,
+          "det_score": 0.9857,
           "gender": 0,
           "gender_label": "Female",
-          "gender_conf": 0.9777,
+          "gender_conf": 0.9857,
           "raw_gender_scores": {
-            "Woman": 0.9777,
-            "Man": 0.0223
+            "Woman": 0.9857,
+            "Man": 0.0143
           },
-          "race": 6,
-          "race_label": "Unknown",
-          "race_conf": 0.551,
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.8446,
           "raw_race_scores": {
-            "asian": 0.0101,
-            "indian": 0.0128,
-            "black": 0.0031,
-            "white": 0.551,
-            "middle eastern": 0.175,
-            "latino hispanic": 0.248
+            "asian": 0.0022,
+            "indian": 0.0013,
+            "black": 0.0001,
+            "white": 0.8446,
+            "middle eastern": 0.0631,
+            "latino hispanic": 0.0887
           }
         }
       ]
@@ -912,27 +887,27 @@
       "faces": [
         {
           "x1": 146,
-          "y1": 156,
-          "x2": 488,
-          "y2": 585,
-          "det_score": 0.9986,
+          "y1": 137,
+          "x2": 507,
+          "y2": 608,
+          "det_score": 0.9964,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9986,
+          "gender_conf": 0.9964,
           "raw_gender_scores": {
-            "Woman": 0.0014,
-            "Man": 0.9986
+            "Woman": 0.0036,
+            "Man": 0.9964
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.4082,
+          "race_conf": 0.543,
           "raw_race_scores": {
-            "asian": 0.0187,
-            "indian": 0.0536,
-            "black": 0.0101,
-            "white": 0.4082,
-            "middle eastern": 0.3038,
-            "latino hispanic": 0.2056
+            "asian": 0.0115,
+            "indian": 0.0221,
+            "black": 0.0048,
+            "white": 0.543,
+            "middle eastern": 0.2529,
+            "latino hispanic": 0.1658
           }
         }
       ]
@@ -943,17 +918,17 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 158,
-          "y1": 138,
-          "x2": 485,
+          "x1": 163,
+          "y1": 117,
+          "x2": 488,
           "y2": 562,
-          "det_score": 0.9793,
+          "det_score": 0.9843,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9793,
+          "gender_conf": 0.9843,
           "raw_gender_scores": {
-            "Woman": 0.0207,
-            "Man": 0.9793
+            "Woman": 0.0157,
+            "Man": 0.9843
           },
           "race": 5,
           "race_label": "Black",
@@ -975,10 +950,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 162,
-          "y1": 137,
-          "x2": 477,
-          "y2": 562,
+          "x1": 155,
+          "y1": 109,
+          "x2": 486,
+          "y2": 559,
           "det_score": 0.9996,
           "gender": 0,
           "gender_label": "Female",
@@ -989,14 +964,14 @@
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.4977,
+          "race_conf": 0.2794,
           "raw_race_scores": {
-            "asian": 0.1229,
-            "indian": 0.2306,
-            "black": 0.4977,
-            "white": 0.0081,
-            "middle eastern": 0.0051,
-            "latino hispanic": 0.1356
+            "asian": 0.2609,
+            "indian": 0.246,
+            "black": 0.2794,
+            "white": 0.0227,
+            "middle eastern": 0.0175,
+            "latino hispanic": 0.1736
           }
         }
       ]
@@ -1007,28 +982,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 152,
-          "y1": 178,
-          "x2": 483,
-          "y2": 577,
-          "det_score": 0.9999,
+          "x1": 147,
+          "y1": 150,
+          "x2": 493,
+          "y2": 601,
+          "det_score": 0.9991,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9999,
+          "gender_conf": 0.9991,
           "raw_gender_scores": {
-            "Woman": 0.0001,
-            "Man": 0.9999
+            "Woman": 0.0009,
+            "Man": 0.9991
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.5264,
+          "race_conf": 0.5399,
           "raw_race_scores": {
-            "asian": 0.0027,
-            "indian": 0.015,
-            "black": 0.0024,
-            "white": 0.5264,
-            "middle eastern": 0.235,
-            "latino hispanic": 0.2185
+            "asian": 0.0031,
+            "indian": 0.0123,
+            "black": 0.002,
+            "white": 0.5399,
+            "middle eastern": 0.1824,
+            "latino hispanic": 0.2603
           }
         }
       ]
@@ -1040,27 +1015,27 @@
       "faces": [
         {
           "x1": 122,
-          "y1": 116,
-          "x2": 463,
-          "y2": 601,
-          "det_score": 0.9989,
+          "y1": 99,
+          "x2": 466,
+          "y2": 619,
+          "det_score": 0.9968,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9989,
+          "gender_conf": 0.9968,
           "raw_gender_scores": {
-            "Woman": 0.0011,
-            "Man": 0.9989
+            "Woman": 0.0032,
+            "Man": 0.9968
           },
-          "race": 1,
-          "race_label": "White",
-          "race_conf": 0.7864,
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.6737,
           "raw_race_scores": {
-            "asian": 0.0002,
-            "indian": 0.001,
-            "black": 0.0001,
-            "white": 0.7864,
-            "middle eastern": 0.1394,
-            "latino hispanic": 0.073
+            "asian": 0.0009,
+            "indian": 0.0037,
+            "black": 0.0005,
+            "white": 0.6737,
+            "middle eastern": 0.2006,
+            "latino hispanic": 0.1205
           }
         }
       ]
@@ -1071,28 +1046,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 145,
-          "y1": 113,
-          "x2": 492,
-          "y2": 605,
-          "det_score": 0.9998,
+          "x1": 146,
+          "y1": 95,
+          "x2": 497,
+          "y2": 635,
+          "det_score": 0.9997,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9998,
+          "gender_conf": 0.9997,
           "raw_gender_scores": {
-            "Woman": 0.0002,
-            "Man": 0.9998
+            "Woman": 0.0003,
+            "Man": 0.9997
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9526,
+          "race_conf": 0.9569,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9526,
-            "middle eastern": 0.0227,
-            "latino hispanic": 0.0247
+            "white": 0.9569,
+            "middle eastern": 0.0242,
+            "latino hispanic": 0.0189
           }
         }
       ]
@@ -1103,10 +1078,10 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 173,
-          "y1": 124,
+          "x1": 160,
+          "y1": 114,
           "x2": 493,
-          "y2": 552,
+          "y2": 557,
           "det_score": 1.0,
           "gender": 0,
           "gender_label": "Female",
@@ -1117,14 +1092,14 @@
           },
           "race": 1,
           "race_label": "White",
-          "race_conf": 0.9912,
+          "race_conf": 1.0,
           "raw_race_scores": {
             "asian": 0.0,
             "indian": 0.0,
             "black": 0.0,
-            "white": 0.9912,
-            "middle eastern": 0.005,
-            "latino hispanic": 0.0038
+            "white": 1.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
           }
         }
       ]
@@ -1135,28 +1110,28 @@
       "face_count": 1,
       "faces": [
         {
-          "x1": 163,
-          "y1": 132,
-          "x2": 503,
-          "y2": 575,
-          "det_score": 0.9833,
+          "x1": 174,
+          "y1": 114,
+          "x2": 506,
+          "y2": 578,
+          "det_score": 0.9851,
           "gender": 1,
           "gender_label": "Male",
-          "gender_conf": 0.9833,
+          "gender_conf": 0.9851,
           "raw_gender_scores": {
-            "Woman": 0.0167,
-            "Man": 0.9833
+            "Woman": 0.0149,
+            "Man": 0.9851
           },
           "race": 6,
           "race_label": "Unknown",
-          "race_conf": 0.5194,
+          "race_conf": 0.552,
           "raw_race_scores": {
-            "asian": 0.5194,
-            "indian": 0.0777,
-            "black": 0.0488,
-            "white": 0.1202,
-            "middle eastern": 0.0577,
-            "latino hispanic": 0.1763
+            "asian": 0.552,
+            "indian": 0.0552,
+            "black": 0.0289,
+            "white": 0.164,
+            "middle eastern": 0.0574,
+            "latino hispanic": 0.1424
           }
         }
       ]
