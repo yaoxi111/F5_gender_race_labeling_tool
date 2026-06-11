@@ -72,29 +72,19 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 ### 示例 1：基本用法
 
 ```bash
-cd C:\Users\李宗泽\Desktop\F5_gender_race_labeling_tool
-
-python label_gender_race.py ^
-  -i D:\F5MTL\person_scene_seg\test ^
-  -o D:\F5MTL\person_scene_seg\test\gender_race_labels.json
+python label_gender_race.py -i D:\F5MTL\person_scene_seg\test -o D:\F5MTL\person_scene_seg\test\gender_race_labels.json
 ```
 
 ### 示例 2：高精度模式（适合小批量精标）
 
 ```bash
-python label_gender_race.py ^
-  -i D:\F5MTL\person_scene_seg\test ^
-  -o D:\F5MTL\person_scene_seg\test\labels.json ^
-  -d retinaface -c 0.8
+python label_gender_race.py -i D:\F5MTL\person_scene_seg\test -o D:\F5MTL\person_scene_seg\test\labels.json -d retinaface -c 0.8
 ```
 
 ### 示例 3：大批量快速标注
 
 ```bash
-python label_gender_race.py ^
-  -i D:\F5MTL\dataset\images ^
-  -o D:\F5MTL\dataset\labels.json ^
-  -d opencv -c 0.5
+python label_gender_race.py -i D:\F5MTL\dataset\images -o D:\F5MTL\dataset\labels.json -d opencv -c 0.5
 ```
 
 ### 示例 4：输出到输入目录同级
@@ -109,10 +99,7 @@ python label_gender_race.py -i D:\data\my_photos
 在标注的同时，将人脸框和标签绘制到图片上并保存：
 
 ```bash
-python label_gender_race.py ^
-  -i D:\F5MTL\person_scene_seg\test ^
-  -o D:\F5MTL\person_scene_seg\test\labels.json ^
-  -v D:\F5MTL\person_scene_seg\test\viz
+python label_gender_race.py -i D:\F5MTL\person_scene_seg\test2 -o D:\F5MTL\person_scene_seg\test2\labels.json -v D:\F5MTL\person_scene_seg\test2\viz
 ```
 
 可视化图片中：
