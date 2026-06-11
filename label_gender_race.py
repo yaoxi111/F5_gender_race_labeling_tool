@@ -70,63 +70,44 @@ def _json_default(obj):
 
 # ─────────── 人脸检测 ───────────
 
-# OpenCV DNN 人脸检测器（懒加载）
-_dnn_net = None
-
-def _get_dnn_detector():
-    global _dnn_net
-    if _dnn_net is None:
-        # 使用 OpenCV 内置的 YuNet 模型（OpenCV 4.5.4+ 自带）
-        # 如果不可用则回退到 Haar 级联
-        _dnn_net = "yunet"
-    return _dnn_net
-
-
-def detect_faces(img):
+def detect_faces(img, detector_backend):
     """
-    检测人脸，返回 [(x1, y1, x2, y2), ...] 列表。
-    优先使用 OpenCV 内置 FaceDetectorYN，不可用时回退到 Haar 级联。
+    使用 DeepFace 的检测后端检测人脸，返回 [(x1, y1, x2, y2), ...] 列表。
     """
-    h_img, w_img = img.shape[:2]
+    from deepface import DeepFace
 
-    # 方式1: OpenCV FaceDetectorYN (OpenCV 4.5.4+)
     try:
-        detector = cv2.FaceDetectorYN.create(
-            "face_detection_yunet_2023mar.onnx",
-            "",
-            (320, 320),
+        faces = DeepFace.extract_faces(
+            img_path=img,
+            detector_backend=detector_backend,
+            enforce_detection=False,
+            align=False,
         )
-        detector.setInputSize((w_img, h_img))
-        _, faces = detector.detect(img)
-        if faces is not None and len(faces) > 0:
-            result = []
-            for face in faces:
-                x, y, w, h = face[:4].astype(int)
-                result.append((x, y, x + w, y + h))
-            return result
-    except Exception:
-        pass
-
-    # 方式2: Haar 级联 (处理中文路径: 复制到脚本目录)
-    try:
-        cascade_src = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
-        cascade_dst = os.path.join(_SCRIPT_DIR, "haarcascade_frontalface_default.xml")
-        if not os.path.exists(cascade_dst):
-            import shutil
-            shutil.copy2(cascade_src, cascade_dst)
-        detector = cv2.CascadeClassifier(cascade_dst)
-        if detector.empty():
-            return []
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = detector.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5,
-            minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE,
-        )
-        if len(faces) == 0:
-            return []
-        return [(int(x), int(y), int(x + w), int(y + h)) for (x, y, w, h) in faces]
     except Exception:
         return []
+
+    if not faces:
+        return []
+
+    result = []
+    for face_data in faces:
+        # extract_faces 返回的 dict 包含 'facial_area' 键
+        if isinstance(face_data, dict):
+            area = face_data.get("facial_area", {})
+            x = area.get("x", 0)
+            y = area.get("y", 0)
+            w = area.get("w", 0)
+            h = area.get("h", 0)
+        else:
+            # numpy array — 无法获取坐标，跳过
+            continue
+
+        if w <= 0 or h <= 0:
+            continue
+
+        result.append((int(x), int(y), int(x + w), int(y + h)))
+
+    return result
 
 
 # ─────────── 核心分析 ───────────
@@ -134,13 +115,13 @@ def detect_faces(img):
 def analyze_image(img, detector_backend, conf_threshold):
     """
     对单张图片做人脸检测 + 性别分类 + 人种分类。
-    先用 Haar 级联做人脸框定位，再用 DeepFace 对裁剪区域做分类。
+    使用 DeepFace 检测后端做人脸框定位，再对裁剪区域做分类。
     返回 FaceInfo 列表。
     """
     from deepface import DeepFace
 
-    # 第一步: Haar 级联检测人脸框
-    face_boxes = detect_faces(img)
+    # 第一步: DeepFace 检测人脸框
+    face_boxes = detect_faces(img, detector_backend)
     if not face_boxes:
         return []
 
@@ -148,8 +129,10 @@ def analyze_image(img, detector_backend, conf_threshold):
     face_infos = []
 
     for (x1, y1, x2, y2) in face_boxes:
-        # 裁剪人脸区域，加一点边距
-        pad = int(max(x2 - x1, y2 - y1) * 0.1)
+        # 裁剪人脸区域，加少量边距确保完整
+        face_w = x2 - x1
+        face_h = y2 - y1
+        pad = int(max(face_w, face_h) * 0.05)
         cx1 = max(0, x1 - pad)
         cy1 = max(0, y1 - pad)
         cx2 = min(w_img, x2 + pad)
