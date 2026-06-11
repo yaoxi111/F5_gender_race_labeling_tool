@@ -68,105 +68,42 @@ def _json_default(obj):
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-# ─────────── 人脸检测 ───────────
-
-def detect_faces(img, detector_backend):
-    """
-    使用 DeepFace 的检测后端检测人脸，返回 [(x1, y1, x2, y2), ...] 列表。
-    """
-    from deepface import DeepFace
-
-    try:
-        faces = DeepFace.extract_faces(
-            img_path=img,
-            detector_backend=detector_backend,
-            enforce_detection=False,
-            align=False,
-        )
-    except Exception:
-        return []
-
-    if not faces:
-        return []
-
-    result = []
-    for face_data in faces:
-        # extract_faces 返回的 dict 包含 'facial_area' 键
-        if isinstance(face_data, dict):
-            area = face_data.get("facial_area", {})
-            x = area.get("x", 0)
-            y = area.get("y", 0)
-            w = area.get("w", 0)
-            h = area.get("h", 0)
-        else:
-            # numpy array — 无法获取坐标，跳过
-            continue
-
-        if w <= 0 or h <= 0:
-            continue
-
-        result.append((int(x), int(y), int(x + w), int(y + h)))
-
-    return result
-
-
 # ─────────── 核心分析 ───────────
 
 def analyze_image(img, detector_backend, conf_threshold):
     """
     对单张图片做人脸检测 + 性别分类 + 人种分类。
-    使用 DeepFace 检测后端做人脸框定位，再对裁剪区域做分类。
+    使用 DeepFace.analyze() 一步完成检测 + 分类，确保分类精度。
     返回 FaceInfo 列表。
     """
     from deepface import DeepFace
 
-    # 第一步: DeepFace 检测人脸框
-    face_boxes = detect_faces(img, detector_backend)
-    if not face_boxes:
+    try:
+        demographies = DeepFace.analyze(
+            img_path=img,
+            actions=["gender", "race"],
+            detector_backend=detector_backend,
+            enforce_detection=False,
+            silent=True,
+        )
+    except Exception:
         return []
 
-    h_img, w_img = img.shape[:2]
+    if not demographies:
+        return []
+
     face_infos = []
+    for r in demographies:
+        # ── 人脸框 ──
+        region = r.get("region", {})
+        x = region.get("x", 0)
+        y = region.get("y", 0)
+        w = region.get("w", 0)
+        h = region.get("h", 0)
 
-    for (x1, y1, x2, y2) in face_boxes:
-        # 裁剪人脸区域，加少量边距确保完整
-        face_w = x2 - x1
-        face_h = y2 - y1
-        pad = int(max(face_w, face_h) * 0.05)
-        cx1 = max(0, x1 - pad)
-        cy1 = max(0, y1 - pad)
-        cx2 = min(w_img, x2 + pad)
-        cy2 = min(h_img, y2 + pad)
-        face_crop = img[cy1:cy2, cx1:cx2]
-
-        if face_crop.size == 0:
+        # 过滤掉过小的人脸（宽或高 < 30 像素）
+        if w < 30 or h < 30:
             continue
-
-        # 第二步: DeepFace 分类
-        try:
-            demographies = DeepFace.analyze(
-                img_path=face_crop,
-                actions=["gender", "race"],
-                detector_backend=detector_backend,
-                enforce_detection=False,
-                silent=True,
-            )
-        except Exception:
-            # 分类失败时保留框，标记 Unknown
-            face_infos.append({
-                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                "det_score": 0.0,
-                "gender": 2, "gender_label": "Unknown", "gender_conf": 0.0,
-                "raw_gender_scores": {},
-                "race": 6, "race_label": "Unknown", "race_conf": 0.0,
-                "raw_race_scores": {},
-            })
-            continue
-
-        if not demographies:
-            continue
-
-        r = demographies[0] if isinstance(demographies, list) else demographies
 
         # ── 性别 ──
         gender_label = r.get("dominant_gender", "Unknown")
@@ -191,7 +128,7 @@ def analyze_image(img, detector_backend, conf_threshold):
             race_id = RACE_MAP.get(race_label.lower(), 6)
 
         face_infos.append({
-            "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            "x1": x, "y1": y, "x2": x + w, "y2": y + h,
             "det_score": round(gender_conf, 4),
             # 性别
             "gender": gender_id,
