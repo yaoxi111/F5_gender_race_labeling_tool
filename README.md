@@ -57,6 +57,7 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 | `--output` | `-o` | string | 否 | 输出 JSON 文件路径 | `./output/gender_race_labels.json` |
 | `--conf` | `-c` | float | 否 | 置信度阈值（低于此值标记为 Unknown） | `0.6` |
 | `--detector` | `-d` | string | 否 | 人脸检测后端 | `opencv` |
+| `--viz-dir` | `-v` | string | 否 | 可视化输出目录（保存带人脸框的图片） | — |
 
 ### 2.3 支持的图片格式
 
@@ -102,6 +103,23 @@ python label_gender_race.py ^
 python label_gender_race.py -i D:\data\my_photos
 # 输出默认为 ./output/gender_race_labels.json
 ```
+
+### 示例 5：生成可视化标注图片
+
+在标注的同时，将人脸框和标签绘制到图片上并保存：
+
+```bash
+python label_gender_race.py ^
+  -i D:\F5MTL\person_scene_seg\test ^
+  -o D:\F5MTL\person_scene_seg\test\labels.json ^
+  -v D:\F5MTL\person_scene_seg\test\viz
+```
+
+可视化图片中：
+- **蓝色框** = 男性
+- **红色框** = 女性
+- **紫色框** = 未知性别
+- 标签格式：`性别/人种` + `置信度%`
 
 ---
 

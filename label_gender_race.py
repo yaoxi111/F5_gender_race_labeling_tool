@@ -36,6 +36,12 @@ if hasattr(sys.stderr, "reconfigure"):
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff"}
 
+# 绘图颜色 (BGR)
+COLOR_MALE = (255, 128, 0)      # 蓝色 - 男性
+COLOR_FEMALE = (0, 80, 255)     # 红色 - 女性
+COLOR_UNKNOWN_G = (180, 0, 180) # 紫色 - 未知性别
+COLOR_BG = (0, 0, 0)            # 黑色背景
+
 # 性别映射: deepface 返回 "Woman"/"Man" -> F5 ODOT: 0=Female, 1=Male, 2=Unknown
 GENDER_MAP = {"Woman": 0, "Man": 1}
 GENDER_LABELS = ["Female", "Male", "Unknown"]
@@ -138,6 +144,63 @@ def analyze_image(img, detector_backend, conf_threshold):
     return face_infos
 
 
+# ─────────── 可视化绘制 ───────────
+
+def draw_faces(img, face_infos):
+    """
+    在图片上绘制人脸框和标注标签。
+    返回绘制后的图片副本。
+    """
+    vis = img.copy()
+    for face in face_infos:
+        x1, y1 = face["x1"], face["y1"]
+        x2, y2 = face["x2"], face["y2"]
+
+        # 性别决定框颜色
+        gid = face["gender"]
+        if gid == 0:
+            color = COLOR_FEMALE
+        elif gid == 1:
+            color = COLOR_MALE
+        else:
+            color = COLOR_UNKNOWN_G
+
+        # 画人脸框
+        cv2.rectangle(vis, (x1, y1), (x2, y2), color, 3)
+
+        # 标签文字: "Male/White 98%"
+        g_label = face["gender_label"]
+        r_label = face["race_label"]
+        g_conf = face["gender_conf"]
+        r_conf = face["race_conf"]
+        line1 = f"{g_label}/{r_label}"
+        line2 = f"{g_conf*100:.0f}%/{r_conf*100:.0f}%"
+
+        # 计算文字大小，绘制背景
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        thickness = 2
+        (tw1, th1), _ = cv2.getTextSize(line1, font, font_scale, thickness)
+        (tw2, th2), _ = cv2.getTextSize(line2, font, font_scale, thickness)
+        box_w = max(tw1, tw2) + 10
+        box_h = th1 + th2 + 16
+
+        # 标签位置: 框上方，若超出图片则放框内
+        label_y1 = y1 - box_h - 4
+        if label_y1 < 0:
+            label_y1 = y1 + 4
+        label_y2 = label_y1 + box_h
+
+        # 画标签背景
+        cv2.rectangle(vis, (x1, label_y1), (x1 + box_w, label_y2), color, -1)
+
+        # 画文字 (白色)
+        cv2.putText(vis, line1, (x1 + 5, label_y1 + th1 + 4), font, font_scale, (255, 255, 255), thickness)
+        cv2.putText(vis, line2, (x1 + 5, label_y1 + th1 + th2 + 12), font, font_scale, (255, 255, 255), thickness)
+
+    return vis
+
+
 # ─────────── 主流程 ───────────
 
 def collect_images(input_dir):
@@ -150,7 +213,7 @@ def collect_images(input_dir):
     return images
 
 
-def run_labeling(input_dir, output_path, conf_threshold, detector_backend):
+def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_dir=None):
     images = collect_images(input_dir)
     if not images:
         print(f"[ERROR] 未找到图片: {input_dir}")
@@ -160,6 +223,9 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend):
     print(f"[INFO] 置信度阈值: {conf_threshold}")
     print(f"[INFO] 检测后端: {detector_backend}")
     print(f"[INFO] 输出文件: {output_path}")
+    if viz_dir:
+        os.makedirs(viz_dir, exist_ok=True)
+        print(f"[INFO] 可视化输出: {viz_dir}")
     print("-" * 60)
 
     all_labels = []
@@ -183,6 +249,13 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend):
             continue
 
         face_infos = analyze_image(img, detector_backend, conf_threshold)
+
+        # 绘制可视化并保存
+        if viz_dir and face_infos:
+            vis_img = draw_faces(img, face_infos)
+            vis_path = os.path.join(viz_dir, os.path.basename(img_path))
+            _, ext = os.path.splitext(vis_path)
+            cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
 
         all_labels.append({
             "image_path": rel_path,
@@ -280,13 +353,15 @@ def main():
     parser.add_argument("--detector", "-d", default="opencv",
                         choices=["opencv", "mtcnn", "retinaface", "mediapipe", "ssd", "yolov8n", "fastmtcnn"],
                         help="人脸检测后端 (默认: opencv)")
+    parser.add_argument("--viz-dir", "-v", default=None,
+                        help="可视化输出目录 (将保存带人脸框标注的图片)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.input):
         print(f"[ERROR] 输入路径不存在或不是目录: {args.input}")
         sys.exit(1)
 
-    run_labeling(args.input, args.output, args.conf, args.detector)
+    run_labeling(args.input, args.output, args.conf, args.detector, args.viz_dir)
 
 
 if __name__ == "__main__":
