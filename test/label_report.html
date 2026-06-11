@@ -2,22 +2,23 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>F5 标注结果报告</title>
+<title>F5 标注结果报告 - test（含人脸框）</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f0f2f5; padding: 24px; color: #333; }
   h1 { text-align: center; margin-bottom: 8px; font-size: 28px; }
   .subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 14px; }
-  .stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 24px; flex-wrap: wrap; }
-  .stat-card { background: #fff; border-radius: 10px; padding: 16px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-width: 120px; }
-  .stat-card .num { font-size: 28px; font-weight: 700; }
-  .stat-card .label { font-size: 13px; color: #888; margin-top: 2px; }
+  .stats { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 14px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-width: 100px; }
+  .stat-card .num { font-size: 26px; font-weight: 700; }
+  .stat-card .label { font-size: 12px; color: #888; margin-top: 2px; }
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
-  th { background: #1a1a2e; color: #fff; padding: 12px 10px; font-size: 14px; font-weight: 600; }
-  td { padding: 10px; text-align: center; vertical-align: middle; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  th { background: #1a1a2e; color: #fff; padding: 10px 8px; font-size: 13px; font-weight: 600; }
+  td { padding: 8px; text-align: center; vertical-align: middle; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
   tr:hover { background: #f8f9ff; }
-  td img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 2px solid #e0e0e0; display: block; margin: 0 auto; }
-  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  td img { width: 120px; height: 120px; object-fit: cover; border-radius: 6px; border: 2px solid #e0e0e0; display: block; margin: 0 auto; cursor: pointer; transition: transform 0.2s; }
+  td img:hover { transform: scale(2.5); z-index: 100; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
   .male { background: #e3f2fd; color: #1565c0; }
   .female { background: #fce4ec; color: #c62828; }
   .unknown-g { background: #f3e5f5; color: #6a1b9a; }
@@ -27,35 +28,48 @@
   .indian { background: #fff8e1; color: #f57f17; }
   .middle-eastern { background: #f3e5f5; color: #7b1fa2; }
   .unknown-r { background: #eceff1; color: #546e7a; }
-  .low { opacity: 0.55; }
-  .conf { font-size: 12px; color: #999; }
+  .conf { font-size: 11px; }
   .conf-high { color: #2e7d32; }
   .conf-mid { color: #f57f17; }
   .conf-low { color: #c62828; font-weight: 600; }
   .idx { font-weight: 700; color: #555; }
+  .bbox { font-size: 11px; color: #999; font-family: monospace; }
+  .no-face { color: #ccc; font-style: italic; }
+  .legend { display: flex; justify-content: center; gap: 20px; margin-bottom: 16px; font-size: 13px; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
 </style>
 </head>
 <body>
 
-<h1>F5 自动标注结果报告</h1>
-<p class="subtitle">共 34 张图片 · 模型: DeepFace · 检测器: OpenCV · 置信度阈值: 0.6</p>
+<h1>F5 自动标注结果报告（含人脸框）</h1>
+<p class="subtitle">共 34 张图片 · Haar 级联人脸检测 + DeepFace 分类 · 置信度阈值: 0.6 · 耗时: 35.2s</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">34</div><div class="label">总图片数</div></div>
+  <div class="stat-card"><div class="num">34</div><div class="label">总图片</div></div>
+  <div class="stat-card"><div class="num">33</div><div class="label">检测到人脸</div></div>
   <div class="stat-card"><div class="num" style="color:#1565c0">17</div><div class="label">Male</div></div>
   <div class="stat-card"><div class="num" style="color:#c62828">16</div><div class="label">Female</div></div>
-  <div class="stat-card"><div class="num" style="color:#e65100">22</div><div class="label">White</div></div>
-  <div class="stat-card"><div class="num" style="color:#2e7d32">2</div><div class="label">Asian</div></div>
+  <div class="stat-card"><div class="num" style="color:#e65100">24</div><div class="label">White</div></div>
   <div class="stat-card"><div class="num" style="color:#4e342e">3</div><div class="label">Black</div></div>
-  <div class="stat-card"><div class="num" style="color:#546e7a">5</div><div class="label">Unknown Race</div></div>
+  <div class="stat-card"><div class="num" style="color:#546e7a">5</div><div class="label">Unknown</div></div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#FF8000"></span> 蓝框 = Male</span>
+  <span><span class="dot" style="background:#0050FF"></span> 红框 = Female</span>
+  <span><span class="dot" style="background:#B400B4"></span> 紫框 = Unknown</span>
+  <span style="color:#888">鼠标悬停图片可放大查看</span>
 </div>
 
 <table>
 <thead>
 <tr>
   <th>#</th>
-  <th>图片</th>
+  <th>原图</th>
+  <th>标注结果</th>
   <th>文件名</th>
+  <th>人脸框</th>
   <th>性别</th>
   <th>性别置信度</th>
   <th>种族</th>
@@ -65,125 +79,153 @@
 <tbody>
 <tr>
   <td class="idx">1</td>
-  <td><img src="celeb_28102.jpg" alt="celeb_28102"></td>
+  <td><img src="celeb_28102.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28102.jpg" alt="标注"></td>
   <td>celeb_28102.jpg</td>
+  <td class="bbox">101,141<br>539,579</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.60%</span></td>
+  <td><span class="conf conf-high">99.08%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">100.00%</span></td>
+  <td><span class="conf conf-high">99.12%</span></td>
 </tr>
 <tr>
   <td class="idx">2</td>
-  <td><img src="celeb_28103.jpg" alt="celeb_28103"></td>
+  <td><img src="celeb_28103.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28103.jpg" alt="标注"></td>
   <td>celeb_28103.jpg</td>
+  <td class="bbox">125,162<br>504,541</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.85%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.95%</span></td>
+  <td><span class="conf conf-high">99.94%</span></td>
 </tr>
 <tr>
   <td class="idx">3</td>
-  <td><img src="celeb_28104.jpg" alt="celeb_28104"></td>
+  <td><img src="celeb_28104.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28104.jpg" alt="标注"></td>
   <td>celeb_28104.jpg</td>
+  <td class="bbox">90,131<br>532,573</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.95%</span></td>
+  <td><span class="conf conf-high">99.86%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">100.00%</span></td>
+  <td><span class="conf conf-high">99.89%</span></td>
 </tr>
 <tr>
   <td class="idx">4</td>
-  <td><img src="celeb_28105.jpg" alt="celeb_28105"></td>
+  <td><img src="celeb_28105.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28105.jpg" alt="标注"></td>
   <td>celeb_28105.jpg</td>
+  <td class="bbox">81,102<br>558,579</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.83%</span></td>
+  <td><span class="conf conf-high">99.85%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-mid">61.76%</span></td>
+  <td><span class="conf conf-mid">73.07%</span></td>
 </tr>
 <tr>
   <td class="idx">5</td>
-  <td><img src="celeb_28106.jpg" alt="celeb_28106"></td>
+  <td><img src="celeb_28106.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28106.jpg" alt="标注"></td>
   <td>celeb_28106.jpg</td>
+  <td class="bbox">85,117<br>555,587</td>
   <td><span class="tag male">Male</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-mid">70.74%</span></td>
+  <td><span class="conf conf-high">96.37%</span></td>
 </tr>
 <tr>
   <td class="idx">6</td>
-  <td><img src="celeb_28107.jpg" alt="celeb_28107"></td>
+  <td><img src="celeb_28107.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28107.jpg" alt="标注"></td>
   <td>celeb_28107.jpg</td>
+  <td class="bbox">113,151<br>527,565</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.99%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.77%</span></td>
+  <td><span class="conf conf-mid">78.26%</span></td>
 </tr>
 <tr>
   <td class="idx">7</td>
-  <td><img src="celeb_28108.jpg" alt="celeb_28108"></td>
+  <td><img src="celeb_28108.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28108.jpg" alt="标注"></td>
   <td>celeb_28108.jpg</td>
+  <td class="bbox">147,186<br>483,522</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">97.27%</span></td>
-  <td><span class="tag indian">Indian</span></td>
-  <td><span class="conf conf-high">98.99%</span></td>
+  <td><span class="conf conf-high">99.97%</span></td>
+  <td><span class="tag unknown-r">Unknown</span></td>
+  <td><span class="conf conf-low">40.40%</span></td>
 </tr>
 <tr>
   <td class="idx">8</td>
-  <td><img src="celeb_28109.jpg" alt="celeb_28109"></td>
+  <td><img src="celeb_28109.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28109.jpg" alt="标注"></td>
   <td>celeb_28109.jpg</td>
+  <td class="bbox">133,167<br>515,549</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.99%</span></td>
+  <td><span class="conf conf-high">96.40%</span></td>
 </tr>
 <tr>
   <td class="idx">9</td>
-  <td><img src="celeb_28110.jpg" alt="celeb_28110"></td>
+  <td><img src="celeb_28110.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28110.jpg" alt="标注"></td>
   <td>celeb_28110.jpg</td>
+  <td class="bbox">105,143<br>535,573</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.23%</span></td>
+  <td><span class="conf conf-high">99.84%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.79%</span></td>
+  <td><span class="conf conf-high">99.50%</span></td>
 </tr>
 <tr>
   <td class="idx">10</td>
-  <td><img src="celeb_28111.jpg" alt="celeb_28111"></td>
+  <td><img src="celeb_28111.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28111.jpg" alt="标注"></td>
   <td>celeb_28111.jpg</td>
+  <td class="bbox">100,132<br>543,575</td>
   <td><span class="tag male">Male</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag unknown-r">Unknown</span></td>
-  <td><span class="conf conf-low">51.28%</span></td>
+  <td><span class="conf conf-low">50.37%</span></td>
 </tr>
 <tr>
   <td class="idx">11</td>
-  <td><img src="celeb_28112.jpg" alt="celeb_28112"></td>
+  <td><img src="celeb_28112.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28112.jpg" alt="标注"></td>
   <td>celeb_28112.jpg</td>
+  <td class="bbox">97,134<br>543,580</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
-  <td><span class="tag unknown-r">Unknown</span></td>
-  <td><span class="conf conf-low">56.07%</span></td>
+  <td><span class="tag white">White</span></td>
+  <td><span class="conf conf-mid">72.35%</span></td>
 </tr>
 <tr>
   <td class="idx">12</td>
-  <td><img src="celeb_28113.jpg" alt="celeb_28113"></td>
+  <td><img src="celeb_28113.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28113.jpg" alt="标注"></td>
   <td>celeb_28113.jpg</td>
+  <td class="bbox">126,150<br>515,539</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.52%</span></td>
+  <td><span class="conf conf-high">99.96%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.08%</span></td>
+  <td><span class="conf conf-high">99.44%</span></td>
 </tr>
 <tr>
   <td class="idx">13</td>
-  <td><img src="celeb_28114.jpg" alt="celeb_28114"></td>
+  <td><img src="celeb_28114.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28114.jpg" alt="标注"></td>
   <td>celeb_28114.jpg</td>
+  <td class="bbox">104,159<br>514,569</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.58%</span></td>
-  <td><span class="tag asian">Asian</span></td>
-  <td><span class="conf conf-mid">74.51%</span></td>
+  <td><span class="conf conf-high">99.89%</span></td>
+  <td><span class="tag unknown-r">Unknown</span></td>
+  <td><span class="conf conf-low">57.01%</span></td>
 </tr>
 <tr>
   <td class="idx">14</td>
-  <td><img src="celeb_28115.jpg" alt="celeb_28115"></td>
+  <td><img src="celeb_28115.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28115.jpg" alt="标注"></td>
   <td>celeb_28115.jpg</td>
+  <td class="bbox">114,147<br>527,560</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
@@ -191,170 +233,208 @@
 </tr>
 <tr>
   <td class="idx">15</td>
-  <td><img src="celeb_28116.jpg" alt="celeb_28116"></td>
+  <td><img src="celeb_28116.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28116.jpg" alt="标注"></td>
   <td>celeb_28116.jpg</td>
+  <td class="bbox">113,149<br>512,548</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">97.82%</span></td>
+  <td><span class="conf conf-high">99.02%</span></td>
   <td><span class="tag black">Black</span></td>
-  <td><span class="conf conf-mid">76.78%</span></td>
+  <td><span class="conf conf-high">82.20%</span></td>
 </tr>
 <tr>
   <td class="idx">16</td>
-  <td><img src="celeb_28117.jpg" alt="celeb_28117"></td>
+  <td><img src="celeb_28117.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28117.jpg" alt="标注"></td>
   <td>celeb_28117.jpg</td>
+  <td class="bbox">118,146<br>524,552</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.90%</span></td>
+  <td><span class="conf conf-high">97.04%</span></td>
 </tr>
 <tr>
   <td class="idx">17</td>
-  <td><img src="celeb_28118.jpg" alt="celeb_28118"></td>
+  <td><img src="celeb_28118.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28118.jpg" alt="标注"></td>
   <td>celeb_28118.jpg</td>
+  <td class="bbox">128,160<br>520,552</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-mid">70.97%</span></td>
+  <td><span class="conf conf-mid">60.36%</span></td>
 </tr>
 <tr>
   <td class="idx">18</td>
-  <td><img src="celeb_28119.jpg" alt="celeb_28119"></td>
+  <td><img src="celeb_28119.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28119.jpg" alt="标注"></td>
   <td>celeb_28119.jpg</td>
+  <td class="bbox">105,133<br>526,554</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.98%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
 </tr>
 <tr>
   <td class="idx">19</td>
-  <td><img src="celeb_28120.jpg" alt="celeb_28120"></td>
+  <td><img src="celeb_28120.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28120.jpg" alt="标注"></td>
   <td>celeb_28120.jpg</td>
+  <td class="bbox">91,119<br>553,581</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.50%</span></td>
+  <td><span class="conf conf-high">99.47%</span></td>
   <td><span class="tag middle-eastern">Middle Eastern</span></td>
-  <td><span class="conf conf-mid">71.86%</span></td>
+  <td><span class="conf conf-mid">60.73%</span></td>
 </tr>
 <tr>
   <td class="idx">20</td>
-  <td><img src="celeb_28121.jpg" alt="celeb_28121"></td>
+  <td><img src="celeb_28121.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28121.jpg" alt="标注"></td>
   <td>celeb_28121.jpg</td>
+  <td class="bbox">106,129<br>531,554</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">93.38%</span></td>
+  <td><span class="conf conf-high">99.84%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-mid">66.22%</span></td>
+  <td><span class="conf conf-mid">62.34%</span></td>
 </tr>
 <tr>
   <td class="idx">21</td>
-  <td><img src="celeb_28122.jpg" alt="celeb_28122"></td>
+  <td><img src="celeb_28122.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28122.jpg" alt="标注"></td>
   <td>celeb_28122.jpg</td>
+  <td class="bbox">98,149<br>530,581</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">97.06%</span></td>
+  <td><span class="conf conf-high">99.56%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-mid">60.96%</span></td>
+  <td><span class="conf conf-high">84.92%</span></td>
 </tr>
 <tr>
   <td class="idx">22</td>
-  <td><img src="celeb_28123.jpg" alt="celeb_28123"></td>
+  <td><img src="celeb_28123.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28123.jpg" alt="标注"></td>
   <td>celeb_28123.jpg</td>
+  <td class="bbox">105,140<br>534,569</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.95%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">98.21%</span></td>
+  <td><span class="conf conf-high">99.14%</span></td>
 </tr>
 <tr>
   <td class="idx">23</td>
-  <td><img src="celeb_28124.jpg" alt="celeb_28124"></td>
+  <td><img src="celeb_28124.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28124.jpg" alt="标注"></td>
   <td>celeb_28124.jpg</td>
+  <td class="bbox">122,148<br>508,534</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.61%</span></td>
+  <td><span class="conf conf-high">99.91%</span></td>
   <td><span class="tag black">Black</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
 </tr>
 <tr>
   <td class="idx">24</td>
-  <td><img src="celeb_28125.jpg" alt="celeb_28125"></td>
+  <td><img src="celeb_28125.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28125.jpg" alt="标注"></td>
   <td>celeb_28125.jpg</td>
+  <td class="bbox">124,162<br>511,549</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.98%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.02%</span></td>
+  <td><span class="conf conf-high">89.78%</span></td>
 </tr>
 <tr>
   <td class="idx">25</td>
-  <td><img src="celeb_28126.jpg" alt="celeb_28126"></td>
+  <td><img src="celeb_28126.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28126.jpg" alt="标注"></td>
   <td>celeb_28126.jpg</td>
+  <td class="bbox">113,144<br>538,569</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">96.58%</span></td>
+  <td><span class="conf conf-high">98.16%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">84.41%</span></td>
+  <td><span class="conf conf-high">83.06%</span></td>
 </tr>
 <tr>
   <td class="idx">26</td>
-  <td><img src="celeb_28127.jpg" alt="celeb_28127"></td>
+  <td><img src="celeb_28127.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28127.jpg" alt="标注"></td>
   <td>celeb_28127.jpg</td>
+  <td class="bbox">102,147<br>532,577</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.24%</span></td>
+  <td><span class="conf conf-high">99.85%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">100.00%</span></td>
+  <td><span class="conf conf-high">98.71%</span></td>
 </tr>
 <tr>
   <td class="idx">27</td>
-  <td><img src="celeb_28128.jpg" alt="celeb_28128"></td>
+  <td><img src="celeb_28128.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28128.jpg" alt="标注"></td>
   <td>celeb_28128.jpg</td>
+  <td class="bbox">110,157<br>523,570</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.58%</span></td>
-  <td><span class="tag unknown-r">Unknown</span></td>
-  <td><span class="conf conf-low">59.67%</span></td>
+  <td><span class="conf conf-high">99.78%</span></td>
+  <td><span class="tag white">White</span></td>
+  <td><span class="conf conf-mid">60.72%</span></td>
 </tr>
 <tr>
   <td class="idx">28</td>
-  <td><img src="celeb_28129.jpg" alt="celeb_28129"></td>
+  <td><img src="celeb_28129.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28129.jpg" alt="标注"></td>
   <td>celeb_28129.jpg</td>
+  <td class="bbox">95,128<br>525,558</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">83.61%</span></td>
+  <td><span class="conf conf-high">97.97%</span></td>
   <td><span class="tag black">Black</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
 </tr>
 <tr>
   <td class="idx">29</td>
-  <td><img src="celeb_28130.jpg" alt="celeb_28130"></td>
+  <td><img src="celeb_28130.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28130.jpg" alt="标注"></td>
   <td>celeb_28130.jpg</td>
+  <td class="bbox">113,143<br>525,555</td>
   <td><span class="tag female">Female</span></td>
-  <td><span class="conf conf-high">99.89%</span></td>
-  <td><span class="tag asian">Asian</span></td>
-  <td><span class="conf conf-mid">64.35%</span></td>
+  <td><span class="conf conf-high">100.00%</span></td>
+  <td><span class="tag unknown-r">Unknown</span></td>
+  <td><span class="conf conf-low">36.44%</span></td>
 </tr>
 <tr>
   <td class="idx">30</td>
-  <td><img src="celeb_28270.jpg" alt="celeb_28270"></td>
+  <td><img src="celeb_28270.jpg" alt="原图"></td>
+  <td class="no-face">未检测到人脸</td>
   <td>celeb_28270.jpg</td>
-  <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">98.59%</span></td>
-  <td><span class="tag unknown-r">Unknown</span></td>
-  <td><span class="conf conf-low">38.22%</span></td>
+  <td class="no-face">—</td>
+  <td class="no-face">—</td>
+  <td class="no-face">—</td>
+  <td class="no-face">—</td>
+  <td class="no-face">—</td>
 </tr>
 <tr>
   <td class="idx">31</td>
-  <td><img src="celeb_28271.jpg" alt="celeb_28271"></td>
+  <td><img src="celeb_28271.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28271.jpg" alt="标注"></td>
   <td>celeb_28271.jpg</td>
+  <td class="bbox">104,139<br>528,563</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.15%</span></td>
+  <td><span class="conf conf-high">99.77%</span></td>
   <td><span class="tag white">White</span></td>
-  <td><span class="conf conf-high">99.84%</span></td>
+  <td><span class="conf conf-high">92.42%</span></td>
 </tr>
 <tr>
   <td class="idx">32</td>
-  <td><img src="celeb_28272.jpg" alt="celeb_28272"></td>
+  <td><img src="celeb_28272.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28272.jpg" alt="标注"></td>
   <td>celeb_28272.jpg</td>
+  <td class="bbox">97,120<br>542,565</td>
   <td><span class="tag male">Male</span></td>
-  <td><span class="conf conf-high">99.92%</span></td>
-  <td><span class="tag white">White</span></td>
   <td><span class="conf conf-high">99.99%</span></td>
+  <td><span class="tag white">White</span></td>
+  <td><span class="conf conf-high">99.79%</span></td>
 </tr>
 <tr>
   <td class="idx">33</td>
-  <td><img src="celeb_28273.jpg" alt="celeb_28273"></td>
+  <td><img src="celeb_28273.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28273.jpg" alt="标注"></td>
   <td>celeb_28273.jpg</td>
+  <td class="bbox">119,153<br>517,551</td>
   <td><span class="tag female">Female</span></td>
   <td><span class="conf conf-high">100.00%</span></td>
   <td><span class="tag white">White</span></td>
@@ -362,12 +442,14 @@
 </tr>
 <tr>
   <td class="idx">34</td>
-  <td><img src="celeb_28274.jpg" alt="celeb_28274"></td>
+  <td><img src="celeb_28274.jpg" alt="原图"></td>
+  <td><img src="viz/celeb_28274.jpg" alt="标注"></td>
   <td>celeb_28274.jpg</td>
-  <td><span class="tag unknown-g">Unknown</span></td>
-  <td><span class="conf conf-low">54.58%</span></td>
+  <td class="bbox">114,154<br>515,555</td>
+  <td><span class="tag male">Male</span></td>
+  <td><span class="conf conf-high">95.01%</span></td>
   <td><span class="tag unknown-r">Unknown</span></td>
-  <td><span class="conf conf-low">49.96%</span></td>
+  <td><span class="conf conf-low">58.56%</span></td>
 </tr>
 </tbody>
 </table>
@@ -375,7 +457,8 @@
 <p style="text-align:center; margin-top:20px; color:#aaa; font-size:12px;">
   置信度颜色：<span style="color:#2e7d32">■ ≥80% 高</span> &nbsp;
   <span style="color:#f57f17">■ 60-80% 中</span> &nbsp;
-  <span style="color:#c62828">■ &lt;60% 低</span>
+  <span style="color:#c62828">■ &lt;60% 低</span> &nbsp;|&nbsp;
+  人脸框坐标格式：左上(x1,y1) 右下(x2,y2)
 </p>
 
 </body>

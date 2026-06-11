@@ -30,3 +30,6 @@ Thumbs.db
 
 # Production logs
 production/
+
+# Copied Haar cascade
+haarcascade_frontalface_default.xml

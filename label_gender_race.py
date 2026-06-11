@@ -68,31 +68,123 @@ def _json_default(obj):
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
+# ─────────── 人脸检测 ───────────
+
+# OpenCV DNN 人脸检测器（懒加载）
+_dnn_net = None
+
+def _get_dnn_detector():
+    global _dnn_net
+    if _dnn_net is None:
+        # 使用 OpenCV 内置的 YuNet 模型（OpenCV 4.5.4+ 自带）
+        # 如果不可用则回退到 Haar 级联
+        _dnn_net = "yunet"
+    return _dnn_net
+
+
+def detect_faces(img):
+    """
+    检测人脸，返回 [(x1, y1, x2, y2), ...] 列表。
+    优先使用 OpenCV 内置 FaceDetectorYN，不可用时回退到 Haar 级联。
+    """
+    h_img, w_img = img.shape[:2]
+
+    # 方式1: OpenCV FaceDetectorYN (OpenCV 4.5.4+)
+    try:
+        detector = cv2.FaceDetectorYN.create(
+            "face_detection_yunet_2023mar.onnx",
+            "",
+            (320, 320),
+        )
+        detector.setInputSize((w_img, h_img))
+        _, faces = detector.detect(img)
+        if faces is not None and len(faces) > 0:
+            result = []
+            for face in faces:
+                x, y, w, h = face[:4].astype(int)
+                result.append((x, y, x + w, y + h))
+            return result
+    except Exception:
+        pass
+
+    # 方式2: Haar 级联 (处理中文路径: 复制到脚本目录)
+    try:
+        cascade_src = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
+        cascade_dst = os.path.join(_SCRIPT_DIR, "haarcascade_frontalface_default.xml")
+        if not os.path.exists(cascade_dst):
+            import shutil
+            shutil.copy2(cascade_src, cascade_dst)
+        detector = cv2.CascadeClassifier(cascade_dst)
+        if detector.empty():
+            return []
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = detector.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5,
+            minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE,
+        )
+        if len(faces) == 0:
+            return []
+        return [(int(x), int(y), int(x + w), int(y + h)) for (x, y, w, h) in faces]
+    except Exception:
+        return []
+
+
 # ─────────── 核心分析 ───────────
 
 def analyze_image(img, detector_backend, conf_threshold):
     """
     对单张图片做人脸检测 + 性别分类 + 人种分类。
+    先用 Haar 级联做人脸框定位，再用 DeepFace 对裁剪区域做分类。
     返回 FaceInfo 列表。
     """
     from deepface import DeepFace
 
-    try:
-        demographies = DeepFace.analyze(
-            img_path=img,
-            actions=["gender", "race"],
-            detector_backend=detector_backend,
-            enforce_detection=False,
-            silent=True,
-        )
-    except Exception:
+    # 第一步: Haar 级联检测人脸框
+    face_boxes = detect_faces(img)
+    if not face_boxes:
         return []
 
-    if not demographies:
-        return []
-
+    h_img, w_img = img.shape[:2]
     face_infos = []
-    for r in demographies:
+
+    for (x1, y1, x2, y2) in face_boxes:
+        # 裁剪人脸区域，加一点边距
+        pad = int(max(x2 - x1, y2 - y1) * 0.1)
+        cx1 = max(0, x1 - pad)
+        cy1 = max(0, y1 - pad)
+        cx2 = min(w_img, x2 + pad)
+        cy2 = min(h_img, y2 + pad)
+        face_crop = img[cy1:cy2, cx1:cx2]
+
+        if face_crop.size == 0:
+            continue
+
+        # 第二步: DeepFace 分类
+        try:
+            demographies = DeepFace.analyze(
+                img_path=face_crop,
+                actions=["gender", "race"],
+                detector_backend=detector_backend,
+                enforce_detection=False,
+                silent=True,
+            )
+        except Exception:
+            # 分类失败时保留框，标记 Unknown
+            face_infos.append({
+                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                "det_score": 0.0,
+                "gender": 2, "gender_label": "Unknown", "gender_conf": 0.0,
+                "raw_gender_scores": {},
+                "race": 6, "race_label": "Unknown", "race_conf": 0.0,
+                "raw_race_scores": {},
+            })
+            continue
+
+        if not demographies:
+            continue
+
+        r = demographies[0] if isinstance(demographies, list) else demographies
+
         # ── 性别 ──
         gender_label = r.get("dominant_gender", "Unknown")
         gender_scores = r.get("gender", {})
@@ -115,15 +207,8 @@ def analyze_image(img, detector_backend, conf_threshold):
         else:
             race_id = RACE_MAP.get(race_label.lower(), 6)
 
-        # ── 人脸框 ──
-        region = r.get("region", {})
-        x = region.get("x", 0)
-        y = region.get("y", 0)
-        w = region.get("w", 0)
-        h = region.get("h", 0)
-
         face_infos.append({
-            "x1": x, "y1": y, "x2": x + w, "y2": y + h,
+            "x1": x1, "y1": y1, "x2": x2, "y2": y2,
             "det_score": round(gender_conf, 4),
             # 性别
             "gender": gender_id,
@@ -203,9 +288,12 @@ def draw_faces(img, face_infos):
 
 # ─────────── 主流程 ───────────
 
-def collect_images(input_dir):
+def collect_images(input_dir, skip_dirs=None):
+    skip = set(skip_dirs) if skip_dirs else set()
     images = []
-    for root, _, files in os.walk(input_dir):
+    for root, dirs, files in os.walk(input_dir):
+        # 排除指定目录
+        dirs[:] = [d for d in dirs if d not in skip]
         for f in files:
             if Path(f).suffix.lower() in IMAGE_EXTS:
                 images.append(os.path.join(root, f))
@@ -214,7 +302,8 @@ def collect_images(input_dir):
 
 
 def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_dir=None):
-    images = collect_images(input_dir)
+    skip = {"viz"} if viz_dir else None
+    images = collect_images(input_dir, skip_dirs=skip)
     if not images:
         print(f"[ERROR] 未找到图片: {input_dir}")
         sys.exit(1)

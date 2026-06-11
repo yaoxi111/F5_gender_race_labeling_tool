@@ -1,0 +1,1089 @@
+{
+  "metadata": {
+    "tool": "F5 Gender & Race Auto-Labeling Tool",
+    "model": "deepface",
+    "detector_backend": "opencv",
+    "conf_threshold": 0.6,
+    "total_images": 34,
+    "total_faces": 33,
+    "elapsed_seconds": 35.22,
+    "fps": 0.97
+  },
+  "statistics": {
+    "male": 17,
+    "female": 16,
+    "unknown_gender": 0,
+    "asian": 0,
+    "white": 24,
+    "middle_eastern": 1,
+    "indian": 0,
+    "latino": 0,
+    "black": 3,
+    "unknown_race": 5,
+    "no_face_images": 1
+  },
+  "labels": [
+    {
+      "image_path": "celeb_28102.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28102.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 101,
+          "y1": 141,
+          "x2": 539,
+          "y2": 579,
+          "det_score": 0.9908,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9908,
+          "raw_gender_scores": {
+            "Woman": 0.9908,
+            "Man": 0.0092
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9912,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9912,
+            "middle eastern": 0.0061,
+            "latino hispanic": 0.0026
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28103.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28103.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 125,
+          "y1": 162,
+          "x2": 504,
+          "y2": 541,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9994,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9994,
+            "middle eastern": 0.0002,
+            "latino hispanic": 0.0005
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28104.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28104.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 90,
+          "y1": 131,
+          "x2": 532,
+          "y2": 573,
+          "det_score": 0.9986,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9986,
+          "raw_gender_scores": {
+            "Woman": 0.0014,
+            "Man": 0.9986
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9989,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9989,
+            "middle eastern": 0.0008,
+            "latino hispanic": 0.0002
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28105.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28105.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 81,
+          "y1": 102,
+          "x2": 558,
+          "y2": 579,
+          "det_score": 0.9985,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9985,
+          "raw_gender_scores": {
+            "Woman": 0.0015,
+            "Man": 0.9985
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.7307,
+          "raw_race_scores": {
+            "asian": 0.0143,
+            "indian": 0.009,
+            "black": 0.0009,
+            "white": 0.7307,
+            "middle eastern": 0.1339,
+            "latino hispanic": 0.1111
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28106.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28106.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 85,
+          "y1": 117,
+          "x2": 555,
+          "y2": 587,
+          "det_score": 1.0,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 0.0,
+            "Man": 1.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9637,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9637,
+            "middle eastern": 0.0157,
+            "latino hispanic": 0.0206
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28107.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28107.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 113,
+          "y1": 151,
+          "x2": 527,
+          "y2": 565,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.7826,
+          "raw_race_scores": {
+            "asian": 0.0014,
+            "indian": 0.0013,
+            "black": 0.0001,
+            "white": 0.7826,
+            "middle eastern": 0.0707,
+            "latino hispanic": 0.1439
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28108.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28108.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 147,
+          "y1": 186,
+          "x2": 483,
+          "y2": 522,
+          "det_score": 0.9997,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9997,
+          "raw_gender_scores": {
+            "Woman": 0.0003,
+            "Man": 0.9997
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.404,
+          "raw_race_scores": {
+            "asian": 0.0017,
+            "indian": 0.1184,
+            "black": 0.0022,
+            "white": 0.2328,
+            "middle eastern": 0.404,
+            "latino hispanic": 0.2409
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28109.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28109.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 133,
+          "y1": 167,
+          "x2": 515,
+          "y2": 549,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.964,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.964,
+            "middle eastern": 0.0257,
+            "latino hispanic": 0.0103
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28110.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28110.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 105,
+          "y1": 143,
+          "x2": 535,
+          "y2": 573,
+          "det_score": 0.9984,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9984,
+          "raw_gender_scores": {
+            "Woman": 0.0016,
+            "Man": 0.9984
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.995,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.995,
+            "middle eastern": 0.0017,
+            "latino hispanic": 0.0033
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28111.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28111.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 100,
+          "y1": 132,
+          "x2": 543,
+          "y2": 575,
+          "det_score": 1.0,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 0.0,
+            "Man": 1.0
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.5037,
+          "raw_race_scores": {
+            "asian": 0.0032,
+            "indian": 0.09,
+            "black": 0.0067,
+            "white": 0.2156,
+            "middle eastern": 0.5037,
+            "latino hispanic": 0.1808
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28112.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28112.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 97,
+          "y1": 134,
+          "x2": 543,
+          "y2": 580,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.7235,
+          "raw_race_scores": {
+            "asian": 0.0097,
+            "indian": 0.0071,
+            "black": 0.0024,
+            "white": 0.7235,
+            "middle eastern": 0.0776,
+            "latino hispanic": 0.1797
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28113.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28113.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 126,
+          "y1": 150,
+          "x2": 515,
+          "y2": 539,
+          "det_score": 0.9996,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9996,
+          "raw_gender_scores": {
+            "Woman": 0.0004,
+            "Man": 0.9996
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9944,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9944,
+            "middle eastern": 0.0014,
+            "latino hispanic": 0.0042
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28114.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28114.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 104,
+          "y1": 159,
+          "x2": 514,
+          "y2": 569,
+          "det_score": 0.9989,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9989,
+          "raw_gender_scores": {
+            "Woman": 0.9989,
+            "Man": 0.0011
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.5701,
+          "raw_race_scores": {
+            "asian": 0.5701,
+            "indian": 0.045,
+            "black": 0.0224,
+            "white": 0.1465,
+            "middle eastern": 0.0626,
+            "latino hispanic": 0.1534
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28115.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28115.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 114,
+          "y1": 147,
+          "x2": 527,
+          "y2": 560,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 1.0,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 1.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28116.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28116.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 113,
+          "y1": 149,
+          "x2": 512,
+          "y2": 548,
+          "det_score": 0.9902,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9902,
+          "raw_gender_scores": {
+            "Woman": 0.9902,
+            "Man": 0.0098
+          },
+          "race": 5,
+          "race_label": "Black",
+          "race_conf": 0.822,
+          "raw_race_scores": {
+            "asian": 0.0349,
+            "indian": 0.0503,
+            "black": 0.822,
+            "white": 0.0038,
+            "middle eastern": 0.0024,
+            "latino hispanic": 0.0867
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28117.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28117.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 118,
+          "y1": 146,
+          "x2": 524,
+          "y2": 552,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9704,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9704,
+            "middle eastern": 0.0225,
+            "latino hispanic": 0.0071
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28118.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28118.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 128,
+          "y1": 160,
+          "x2": 520,
+          "y2": 552,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.6036,
+          "raw_race_scores": {
+            "asian": 0.0129,
+            "indian": 0.0193,
+            "black": 0.0013,
+            "white": 0.6036,
+            "middle eastern": 0.1789,
+            "latino hispanic": 0.184
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28119.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28119.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 105,
+          "y1": 133,
+          "x2": 526,
+          "y2": 554,
+          "det_score": 1.0,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 0.0,
+            "Man": 1.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 1.0,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 1.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28120.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28120.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 91,
+          "y1": 119,
+          "x2": 553,
+          "y2": 581,
+          "det_score": 0.9947,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9947,
+          "raw_gender_scores": {
+            "Woman": 0.0053,
+            "Man": 0.9947
+          },
+          "race": 2,
+          "race_label": "Middle Eastern",
+          "race_conf": 0.6073,
+          "raw_race_scores": {
+            "asian": 0.0009,
+            "indian": 0.0576,
+            "black": 0.0006,
+            "white": 0.2263,
+            "middle eastern": 0.6073,
+            "latino hispanic": 0.1074
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28121.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28121.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 106,
+          "y1": 129,
+          "x2": 531,
+          "y2": 554,
+          "det_score": 0.9984,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9984,
+          "raw_gender_scores": {
+            "Woman": 0.9984,
+            "Man": 0.0016
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.6234,
+          "raw_race_scores": {
+            "asian": 0.0425,
+            "indian": 0.0226,
+            "black": 0.0055,
+            "white": 0.6234,
+            "middle eastern": 0.0921,
+            "latino hispanic": 0.2139
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28122.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28122.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 98,
+          "y1": 149,
+          "x2": 530,
+          "y2": 581,
+          "det_score": 0.9956,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9956,
+          "raw_gender_scores": {
+            "Woman": 0.0044,
+            "Man": 0.9956
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.8492,
+          "raw_race_scores": {
+            "asian": 0.0004,
+            "indian": 0.0011,
+            "black": 0.0,
+            "white": 0.8492,
+            "middle eastern": 0.0968,
+            "latino hispanic": 0.0525
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28123.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28123.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 105,
+          "y1": 140,
+          "x2": 534,
+          "y2": 569,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9914,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9914,
+            "middle eastern": 0.0021,
+            "latino hispanic": 0.0065
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28124.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28124.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 122,
+          "y1": 148,
+          "x2": 508,
+          "y2": 534,
+          "det_score": 0.9991,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9991,
+          "raw_gender_scores": {
+            "Woman": 0.0009,
+            "Man": 0.9991
+          },
+          "race": 5,
+          "race_label": "Black",
+          "race_conf": 1.0,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 1.0,
+            "white": 0.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28125.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28125.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 124,
+          "y1": 162,
+          "x2": 511,
+          "y2": 549,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.8978,
+          "raw_race_scores": {
+            "asian": 0.0001,
+            "indian": 0.0003,
+            "black": 0.0,
+            "white": 0.8978,
+            "middle eastern": 0.0482,
+            "latino hispanic": 0.0537
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28126.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28126.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 113,
+          "y1": 144,
+          "x2": 538,
+          "y2": 569,
+          "det_score": 0.9816,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9816,
+          "raw_gender_scores": {
+            "Woman": 0.0184,
+            "Man": 0.9816
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.8306,
+          "raw_race_scores": {
+            "asian": 0.0007,
+            "indian": 0.003,
+            "black": 0.0002,
+            "white": 0.8306,
+            "middle eastern": 0.0853,
+            "latino hispanic": 0.0803
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28127.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28127.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 102,
+          "y1": 147,
+          "x2": 532,
+          "y2": 577,
+          "det_score": 0.9985,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9985,
+          "raw_gender_scores": {
+            "Woman": 0.9985,
+            "Man": 0.0015
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9871,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9871,
+            "middle eastern": 0.0075,
+            "latino hispanic": 0.0054
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28128.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28128.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 110,
+          "y1": 157,
+          "x2": 523,
+          "y2": 570,
+          "det_score": 0.9978,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9978,
+          "raw_gender_scores": {
+            "Woman": 0.0022,
+            "Man": 0.9978
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.6072,
+          "raw_race_scores": {
+            "asian": 0.0014,
+            "indian": 0.0107,
+            "black": 0.001,
+            "white": 0.6072,
+            "middle eastern": 0.2348,
+            "latino hispanic": 0.145
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28129.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28129.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 95,
+          "y1": 128,
+          "x2": 525,
+          "y2": 558,
+          "det_score": 0.9797,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9797,
+          "raw_gender_scores": {
+            "Woman": 0.0203,
+            "Man": 0.9797
+          },
+          "race": 5,
+          "race_label": "Black",
+          "race_conf": 1.0,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 1.0,
+            "white": 0.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28130.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28130.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 113,
+          "y1": 143,
+          "x2": 525,
+          "y2": 555,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.3644,
+          "raw_race_scores": {
+            "asian": 0.3644,
+            "indian": 0.098,
+            "black": 0.3402,
+            "white": 0.0142,
+            "middle eastern": 0.0064,
+            "latino hispanic": 0.1768
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28270.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28270.jpg",
+      "face_count": 0,
+      "faces": []
+    },
+    {
+      "image_path": "celeb_28271.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28271.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 104,
+          "y1": 139,
+          "x2": 528,
+          "y2": 563,
+          "det_score": 0.9977,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9977,
+          "raw_gender_scores": {
+            "Woman": 0.0023,
+            "Man": 0.9977
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9242,
+          "raw_race_scores": {
+            "asian": 0.0004,
+            "indian": 0.0004,
+            "black": 0.0001,
+            "white": 0.9242,
+            "middle eastern": 0.0303,
+            "latino hispanic": 0.0445
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28272.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28272.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 97,
+          "y1": 120,
+          "x2": 542,
+          "y2": 565,
+          "det_score": 0.9999,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9999,
+          "raw_gender_scores": {
+            "Woman": 0.0001,
+            "Man": 0.9999
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.9979,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 0.9979,
+            "middle eastern": 0.0008,
+            "latino hispanic": 0.0014
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28273.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28273.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 119,
+          "y1": 153,
+          "x2": 517,
+          "y2": 551,
+          "det_score": 1.0,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 1.0,
+          "raw_gender_scores": {
+            "Woman": 1.0,
+            "Man": 0.0
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 1.0,
+          "raw_race_scores": {
+            "asian": 0.0,
+            "indian": 0.0,
+            "black": 0.0,
+            "white": 1.0,
+            "middle eastern": 0.0,
+            "latino hispanic": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "celeb_28274.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test\\celeb_28274.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 114,
+          "y1": 154,
+          "x2": 515,
+          "y2": 555,
+          "det_score": 0.9501,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9501,
+          "raw_gender_scores": {
+            "Woman": 0.0499,
+            "Man": 0.9501
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.5856,
+          "raw_race_scores": {
+            "asian": 0.5856,
+            "indian": 0.0985,
+            "black": 0.0691,
+            "white": 0.0432,
+            "middle eastern": 0.0189,
+            "latino hispanic": 0.1847
+          }
+        }
+      ]
+    }
+  ]
+}
