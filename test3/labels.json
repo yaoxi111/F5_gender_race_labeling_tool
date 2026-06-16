@@ -1,0 +1,283 @@
+{
+  "metadata": {
+    "tool": "F5 Gender & Race Auto-Labeling Tool",
+    "model": "deepface",
+    "detector_backend": "retinaface",
+    "conf_threshold": 0.6,
+    "total_images": 8,
+    "total_faces": 8,
+    "elapsed_seconds": 70.01,
+    "fps": 0.11
+  },
+  "statistics": {
+    "male": 2,
+    "female": 5,
+    "unknown_gender": 1,
+    "asian": 2,
+    "white": 4,
+    "middle_eastern": 0,
+    "indian": 0,
+    "latino": 0,
+    "black": 0,
+    "unknown_race": 2,
+    "no_face_images": 0
+  },
+  "labels": [
+    {
+      "image_path": "atr_15728.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15728.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 204,
+          "y1": 94,
+          "x2": 238,
+          "y2": 143,
+          "det_score": 0.8697,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.8697,
+          "raw_gender_scores": {
+            "Woman": 0.8697,
+            "Man": 0.1303
+          },
+          "race": 0,
+          "race_label": "Asian",
+          "race_conf": 0.6428,
+          "raw_race_scores": {
+            "asian": 0.6428,
+            "indian": 0.0732,
+            "black": 0.0381,
+            "white": 0.1169,
+            "middle eastern": 0.035,
+            "latino hispanic": 0.094
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15729.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15729.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 166,
+          "y1": 71,
+          "x2": 215,
+          "y2": 138,
+          "det_score": 0.9912,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.9912,
+          "raw_gender_scores": {
+            "Woman": 0.0088,
+            "Man": 0.9912
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.4751,
+          "raw_race_scores": {
+            "asian": 0.0015,
+            "indian": 0.2542,
+            "black": 0.0231,
+            "white": 0.0874,
+            "middle eastern": 0.4751,
+            "latino hispanic": 0.1587
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15730.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15730.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 157,
+          "y1": 64,
+          "x2": 203,
+          "y2": 131,
+          "det_score": 0.9476,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9476,
+          "raw_gender_scores": {
+            "Woman": 0.9476,
+            "Man": 0.0524
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.6737,
+          "raw_race_scores": {
+            "asian": 0.0005,
+            "indian": 0.0029,
+            "black": 0.0001,
+            "white": 0.6737,
+            "middle eastern": 0.2391,
+            "latino hispanic": 0.0837
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15731.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15731.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 212,
+          "y1": 108,
+          "x2": 256,
+          "y2": 148,
+          "det_score": 0.925,
+          "gender": 1,
+          "gender_label": "Male",
+          "gender_conf": 0.925,
+          "raw_gender_scores": {
+            "Woman": 0.075,
+            "Man": 0.925
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.686,
+          "raw_race_scores": {
+            "asian": 0.0163,
+            "indian": 0.0117,
+            "black": 0.0012,
+            "white": 0.686,
+            "middle eastern": 0.173,
+            "latino hispanic": 0.1117
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15732.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15732.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 185,
+          "y1": 49,
+          "x2": 225,
+          "y2": 118,
+          "det_score": 0.7094,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.7094,
+          "raw_gender_scores": {
+            "Woman": 0.7094,
+            "Man": 0.2906
+          },
+          "race": 6,
+          "race_label": "Unknown",
+          "race_conf": 0.5504,
+          "raw_race_scores": {
+            "asian": 0.3694,
+            "indian": 0.0026,
+            "black": 0.0003,
+            "white": 0.5504,
+            "middle eastern": 0.0256,
+            "latino hispanic": 0.0518
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15733.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15733.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 199,
+          "y1": 119,
+          "x2": 236,
+          "y2": 171,
+          "det_score": 0.9983,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9983,
+          "raw_gender_scores": {
+            "Woman": 0.9983,
+            "Man": 0.0017
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.8155,
+          "raw_race_scores": {
+            "asian": 0.0016,
+            "indian": 0.0022,
+            "black": 0.0001,
+            "white": 0.8155,
+            "middle eastern": 0.1031,
+            "latino hispanic": 0.0775
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15734.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15734.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 167,
+          "y1": 65,
+          "x2": 210,
+          "y2": 126,
+          "det_score": 0.5975,
+          "gender": 2,
+          "gender_label": "Unknown",
+          "gender_conf": 0.5975,
+          "raw_gender_scores": {
+            "Woman": 0.4025,
+            "Man": 0.5975
+          },
+          "race": 1,
+          "race_label": "White",
+          "race_conf": 0.7768,
+          "raw_race_scores": {
+            "asian": 0.0264,
+            "indian": 0.0104,
+            "black": 0.0013,
+            "white": 0.7768,
+            "middle eastern": 0.077,
+            "latino hispanic": 0.108
+          }
+        }
+      ]
+    },
+    {
+      "image_path": "atr_15735.jpg",
+      "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15735.jpg",
+      "face_count": 1,
+      "faces": [
+        {
+          "x1": 234,
+          "y1": 71,
+          "x2": 279,
+          "y2": 134,
+          "det_score": 0.9992,
+          "gender": 0,
+          "gender_label": "Female",
+          "gender_conf": 0.9992,
+          "raw_gender_scores": {
+            "Woman": 0.9992,
+            "Man": 0.0008
+          },
+          "race": 0,
+          "race_label": "Asian",
+          "race_conf": 0.9931,
+          "raw_race_scores": {
+            "asian": 0.9931,
+            "indian": 0.0013,
+            "black": 0.0001,
+            "white": 0.0011,
+            "middle eastern": 0.0001,
+            "latino hispanic": 0.0043
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 """
-F5 性别与人种自动标注工具 v2 (deepface 版)
-人体检测 + 人脸检测 + 性别分类 + 人种分类: deepface + OpenCV HOG
+F5 性别与人种自动标注工具 (deepface 版)
+人脸检测 + 性别分类 + 人种分类: deepface
 输出与 F5 ODOT FaceInfo 结构对齐的 JSON 标注文件。
 
 用法:
@@ -37,10 +37,10 @@ if hasattr(sys.stderr, "reconfigure"):
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff"}
 
 # 绘图颜色 (BGR)
-COLOR_PERSON = (0, 255, 0)       # 绿色 - 人体
-COLOR_MALE = (255, 128, 0)       # 蓝色 - 男性
-COLOR_FEMALE = (0, 80, 255)      # 红色 - 女性
-COLOR_UNKNOWN_G = (180, 0, 180)  # 紫色 - 未知性别
+COLOR_MALE = (255, 128, 0)      # 蓝色 - 男性
+COLOR_FEMALE = (0, 80, 255)     # 红色 - 女性
+COLOR_UNKNOWN_G = (180, 0, 180) # 紫色 - 未知性别
+COLOR_BG = (0, 0, 0)            # 黑色背景
 
 # 性别映射: deepface 返回 "Woman"/"Man" -> F5 ODOT: 0=Female, 1=Male, 2=Unknown
 GENDER_MAP = {"Woman": 0, "Man": 1}
@@ -66,77 +66,6 @@ def _json_default(obj):
     if isinstance(obj, np.ndarray):
         return obj.tolist()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-
-# ─────────── 人体检测 ───────────
-
-# HOG 人体检测器（懒加载）
-_hog = None
-
-def _get_hog_detector():
-    global _hog
-    if _hog is None:
-        _hog = cv2.HOGDescriptor()
-        _hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-    return _hog
-
-
-def detect_persons(img):
-    """
-    使用 OpenCV HOG + SVM 检测人体，返回 [(x1, y1, x2, y2, score), ...] 列表。
-    """
-    hog = _get_hog_detector()
-    h_img, w_img = img.shape[:2]
-
-    # 检测人体
-    rects, weights = hog.detectMultiScale(
-        img,
-        winStride=(8, 8),
-        padding=(4, 4),
-        scale=1.05,
-    )
-
-    if len(rects) == 0:
-        return []
-
-    # NMS 去重
-    persons = []
-    for (x, y, w, h), score in zip(rects, weights):
-        x, y, w, h = int(x), int(y), int(w), int(h)
-        # 过滤太小的检测
-        if w < 60 or h < 120:
-            continue
-        # 限制在图片范围内
-        x1 = max(0, x)
-        y1 = max(0, y)
-        x2 = min(w_img, x + w)
-        y2 = min(h_img, y + h)
-        persons.append((x1, y1, x2, y2, float(score)))
-
-    # 简单 NMS: 按分数排序，去除重叠过多的框
-    persons.sort(key=lambda p: p[4], reverse=True)
-    keep = []
-    for p in persons:
-        px1, py1, px2, py2, pscore = p
-        is_dup = False
-        for k in keep:
-            kx1, ky1, kx2, ky2, _ = k
-            # 计算 IoU
-            ix1 = max(px1, kx1)
-            iy1 = max(py1, ky1)
-            ix2 = min(px2, kx2)
-            iy2 = min(py2, ky2)
-            inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
-            area_p = (px2 - px1) * (py2 - py1)
-            area_k = (kx2 - kx1) * (ky2 - ky1)
-            union = area_p + area_k - inter
-            if union > 0 and inter / union > 0.5:
-                is_dup = True
-                break
-        if not is_dup:
-            keep.append(p)
-
-    return keep
 
 
 # ─────────── 核心分析 ───────────
@@ -222,31 +151,12 @@ def analyze_image(img, detector_backend, conf_threshold):
 
 # ─────────── 可视化绘制 ───────────
 
-def draw_results(img, face_infos, person_infos):
+def draw_faces(img, face_infos):
     """
-    在图片上绘制人体框（绿色）和人脸框（蓝/红/紫）。
+    在图片上绘制人脸框和标注标签。
     返回绘制后的图片副本。
     """
     vis = img.copy()
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.6
-    thickness = 2
-
-    # ── 先画人体框（绿色，最底层）──
-    for p in person_infos:
-        px1, py1, px2, py2 = p["x1"], p["y1"], p["x2"], p["y2"]
-        cv2.rectangle(vis, (px1, py1), (px2, py2), COLOR_PERSON, 3)
-
-        # 标签: "person"
-        label = "person"
-        (tw, th), _ = cv2.getTextSize(label, font, font_scale, thickness)
-        label_y1 = py1 - th - 12
-        if label_y1 < 0:
-            label_y1 = py1 + 4
-        cv2.rectangle(vis, (px1, label_y1), (px1 + tw + 10, label_y1 + th + 10), COLOR_PERSON, -1)
-        cv2.putText(vis, label, (px1 + 5, label_y1 + th + 4), font, font_scale, (255, 255, 255), thickness)
-
-    # ── 再画人脸框（上层）──
     for face in face_infos:
         x1, y1 = face["x1"], face["y1"]
         x2, y2 = face["x2"], face["y2"]
@@ -271,17 +181,25 @@ def draw_results(img, face_infos, person_infos):
         line1 = f"{g_label}/{r_label}"
         line2 = f"{g_conf*100:.0f}%/{r_conf*100:.0f}%"
 
+        # 计算文字大小，绘制背景
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        thickness = 2
         (tw1, th1), _ = cv2.getTextSize(line1, font, font_scale, thickness)
         (tw2, th2), _ = cv2.getTextSize(line2, font, font_scale, thickness)
         box_w = max(tw1, tw2) + 10
         box_h = th1 + th2 + 16
 
+        # 标签位置: 框上方，若超出图片则放框内
         label_y1 = y1 - box_h - 4
         if label_y1 < 0:
             label_y1 = y1 + 4
         label_y2 = label_y1 + box_h
 
+        # 画标签背景
         cv2.rectangle(vis, (x1, label_y1), (x1 + box_w, label_y2), color, -1)
+
+        # 画文字 (白色)
         cv2.putText(vis, line1, (x1 + 5, label_y1 + th1 + 4), font, font_scale, (255, 255, 255), thickness)
         cv2.putText(vis, line2, (x1 + 5, label_y1 + th1 + th2 + 12), font, font_scale, (255, 255, 255), thickness)
 
@@ -321,11 +239,11 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
 
     all_labels = []
     stats = {
-        "total_images": 0, "total_faces": 0, "total_persons": 0,
+        "total_images": 0, "total_faces": 0,
         "male": 0, "female": 0, "unknown_gender": 0,
         "asian": 0, "white": 0, "middle_eastern": 0,
         "indian": 0, "latino": 0, "black": 0, "unknown_race": 0,
-        "no_face": 0, "no_person": 0,
+        "no_face": 0,
     }
     start_time = time.time()
 
@@ -339,22 +257,11 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
             print("无法读取")
             continue
 
-        # 人体检测
-        persons = detect_persons(img)
-        person_infos = []
-        for (px1, py1, px2, py2, pscore) in persons:
-            person_infos.append({
-                "x1": px1, "y1": py1, "x2": px2, "y2": py2,
-                "label": "person",
-                "det_score": round(pscore, 4),
-            })
-
-        # 人脸检测 + 分类
         face_infos = analyze_image(img, detector_backend, conf_threshold)
 
         # 绘制可视化并保存
-        if viz_dir and (face_infos or person_infos):
-            vis_img = draw_results(img, face_infos, person_infos)
+        if viz_dir and face_infos:
+            vis_img = draw_faces(img, face_infos)
             vis_path = os.path.join(viz_dir, os.path.basename(img_path))
             _, ext = os.path.splitext(vis_path)
             cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
@@ -362,76 +269,59 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
         all_labels.append({
             "image_path": rel_path,
             "image_abs_path": os.path.abspath(img_path),
-            "person_count": len(person_infos),
-            "persons": person_infos,
             "face_count": len(face_infos),
             "faces": face_infos,
         })
 
         stats["total_images"] += 1
-        stats["total_persons"] += len(person_infos)
         stats["total_faces"] += len(face_infos)
-
-        if not person_infos:
-            stats["no_person"] += 1
-
         if not face_infos:
             stats["no_face"] += 1
+            print("无人脸")
+        else:
+            for f in face_infos:
+                # 性别统计
+                g = f["gender"]
+                if g == 0:
+                    stats["female"] += 1
+                elif g == 1:
+                    stats["male"] += 1
+                else:
+                    stats["unknown_gender"] += 1
+                # 人种统计
+                race_id = f["race"]
+                if race_id == 0:
+                    stats["asian"] += 1
+                elif race_id == 1:
+                    stats["white"] += 1
+                elif race_id == 2:
+                    stats["middle_eastern"] += 1
+                elif race_id == 3:
+                    stats["indian"] += 1
+                elif race_id == 4:
+                    stats["latino"] += 1
+                elif race_id == 5:
+                    stats["black"] += 1
+                else:
+                    stats["unknown_race"] += 1
 
-        # 性别/人种统计
-        for f in face_infos:
-            g = f["gender"]
-            if g == 0:
-                stats["female"] += 1
-            elif g == 1:
-                stats["male"] += 1
-            else:
-                stats["unknown_gender"] += 1
-            race_id = f["race"]
-            if race_id == 0:
-                stats["asian"] += 1
-            elif race_id == 1:
-                stats["white"] += 1
-            elif race_id == 2:
-                stats["middle_eastern"] += 1
-            elif race_id == 3:
-                stats["indian"] += 1
-            elif race_id == 4:
-                stats["latino"] += 1
-            elif race_id == 5:
-                stats["black"] += 1
-            else:
-                stats["unknown_race"] += 1
-
-        # 打印摘要
-        parts = []
-        if person_infos:
-            parts.append(f"{len(person_infos)}个人体")
-        if face_infos:
-            face_summary = [f"{f['gender_label']}/{f['race_label']}" for f in face_infos]
-            parts.append(f"{len(face_infos)}张人脸 -> {face_summary}")
-        if not parts:
-            parts.append("未检测到")
-        print(", ".join(parts))
+            summary = [f"{f['gender_label']}/{f['race_label']}" for f in face_infos]
+            print(f"{len(face_infos)}张人脸 -> {summary}")
 
     elapsed = time.time() - start_time
 
     output = {
         "metadata": {
-            "tool": "F5 Gender & Race Auto-Labeling Tool v2",
+            "tool": "F5 Gender & Race Auto-Labeling Tool",
             "model": "deepface",
-            "person_detector": "opencv_hog",
-            "face_detector_backend": detector_backend,
+            "detector_backend": detector_backend,
             "conf_threshold": conf_threshold,
             "total_images": stats["total_images"],
-            "total_persons": stats["total_persons"],
             "total_faces": stats["total_faces"],
             "elapsed_seconds": round(elapsed, 2),
             "fps": round(stats["total_images"] / elapsed, 2) if elapsed > 0 else 0,
         },
         "statistics": {
-            "persons": stats["total_persons"],
-            "no_person_images": stats["no_person"],
             "male": stats["male"],
             "female": stats["female"],
             "unknown_gender": stats["unknown_gender"],
@@ -454,18 +344,18 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
     print("=" * 60)
     print(f"[DONE] 标注完成!")
     print(f"  图片总数: {stats['total_images']}")
-    print(f"  人体总数: {stats['total_persons']} (无人体图片: {stats['no_person']})")
-    print(f"  人脸总数: {stats['total_faces']} (无人脸图片: {stats['no_face']})")
+    print(f"  人脸总数: {stats['total_faces']}")
     print(f"  性别 - 男性: {stats['male']}, 女性: {stats['female']}, 未知: {stats['unknown_gender']}")
     print(f"  人种 - 亚洲人: {stats['asian']}, 白人: {stats['white']}, "
           f"中东人: {stats['middle_eastern']}, 印度人: {stats['indian']}, "
           f"拉丁裔: {stats['latino']}, 黑人: {stats['black']}, 未知: {stats['unknown_race']}")
+    print(f"  无人脸图片: {stats['no_face']}")
     print(f"  耗时: {elapsed:.1f}s ({stats['total_images'] / elapsed:.1f} fps)")
     print(f"  输出: {output_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="F5 性别与人种自动标注工具 v2 (deepface + 人体检测)")
+    parser = argparse.ArgumentParser(description="F5 性别与人种自动标注工具 (deepface)")
     parser.add_argument("--input", "-i", required=True, help="输入图片文件夹路径")
     parser.add_argument("--output", "-o", default="./output/gender_race_labels.json", help="输出 JSON 文件路径")
     parser.add_argument("--conf", "-c", type=float, default=0.6, help="置信度阈值 (默认: 0.6)")
@@ -473,7 +363,7 @@ def main():
                         choices=["opencv", "mtcnn", "retinaface", "mediapipe", "ssd", "yolov8n", "fastmtcnn"],
                         help="人脸检测后端 (默认: opencv)")
     parser.add_argument("--viz-dir", "-v", default=None,
-                        help="可视化输出目录 (将保存带人体框+人脸框标注的图片)")
+                        help="可视化输出目录 (将保存带人脸框标注的图片)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.input):
