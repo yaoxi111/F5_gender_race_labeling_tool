@@ -1,6 +1,6 @@
-# F5 性别与人种自动标注工具
+# F5 性别与人种自动标注工具 v2
 
-基于 [deepface](https://github.com/serengil/deepface) 的人脸检测 + 性别分类 + 人种分类自动标注工具，输出与 F5 ODOT `FaceInfo` 结构对齐的 JSON 标注文件。
+基于 [DeepFace](https://github.com/serengil/deepface) + [YOLOv8](https://github.com/ultralytics/ultralytics) 的 **人体检测 + 人脸检测 + 性别分类 + 人种分类** 自动标注工具，输出与 F5 ODOT `FaceInfo` 结构对齐的 JSON 标注文件。
 
 ---
 
@@ -8,18 +8,20 @@
 
 ```
 F5_gender_race_labeling_tool/
-├── label_gender_race.py        # 主脚本（唯一入口）
+├── label_gender_race.py        # 主脚本（本地版）
+├── label_gender_race_v1.py     # v1 备份（仅人脸，无人体）
 ├── requirements.txt            # Python 依赖
 ├── setup_and_run.bat           # 一键安装依赖 + 运行
 ├── run_example.bat             # 示例运行脚本
+├── TECHNICAL.md                # 技术文档
 ├── README.md                   # 本文档
-└── .deepface/weights/          # 模型权重（已内置，无需下载）
-    ├── gender_model_weights.h5 # 性别分类模型
-    ├── race_model_single_batch.h5 # 人种分类模型
-    └── retinaface.h5           # RetinaFace 人脸检测模型（首次使用 retinaface 后端时自动下载）
+├── yolov8n.pt                  # YOLOv8 人体检测模型 (6MB)
+├── .deepface/weights/          # DeepFace 模型权重
+│   ├── gender_model_weights.h5     # 性别分类 (512MB)
+│   ├── race_model_single_batch.h5  # 人种分类 (512MB)
+│   └── retinaface.h5               # RetinaFace 人脸检测 (113MB)
+└── offline_package/            # 离线部署包（见第 10 节）
 ```
-
-模型权重已内置在 `.deepface/weights/` 目录中，首次运行无需联网下载。`retinaface.h5` 约 119MB，首次使用 `-d retinaface` 时会自动下载。
 
 ---
 
@@ -32,13 +34,13 @@ F5_gender_race_labeling_tool/
 ### 1.2 安装依赖
 
 ```bash
-cd C:\Users\李宗泽\Desktop\F5_gender_race_labeling_tool
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
 ```
 
 ### 1.3 模型权重
 
-模型权重已内置在 `.deepface/weights/` 目录中，无需联网下载。首次运行直接可用。
+- `.deepface/weights/` 中的 3 个模型已内置，无需联网
+- `yolov8n.pt` 首次运行时由 ultralytics 自动下载（约 6MB）
 
 ---
 
@@ -58,7 +60,7 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 | `--output` | `-o` | string | 否 | 输出 JSON 文件路径 | `./output/gender_race_labels.json` |
 | `--conf` | `-c` | float | 否 | 置信度阈值（低于此值标记为 Unknown） | `0.6` |
 | `--detector` | `-d` | string | 否 | 人脸检测后端（推荐 `retinaface`） | `opencv` |
-| `--viz-dir` | `-v` | string | 否 | 可视化输出目录（保存带人脸框的图片） | — |
+| `--viz-dir` | `-v` | string | 否 | 可视化输出目录（保存带框标注的图片） | — |
 
 ### 2.3 支持的图片格式
 
@@ -73,32 +75,27 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 ### 示例 1：推荐用法（retinaface + 可视化）
 
 ```bash
-python label_gender_race.py -i D:\F5MTL\person_scene_seg\test2 -o D:\F5MTL\person_scene_seg\test2\labels.json -v D:\F5MTL\person_scene_seg\test2\viz -d retinaface
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json -v D:\data\viz -d retinaface
 ```
 
 ### 示例 2：大批量快速标注（opencv 最快）
 
 ```bash
-python label_gender_race.py -i D:\F5MTL\dataset\images -o D:\F5MTL\dataset\labels.json -d opencv -c 0.5
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d opencv -c 0.5
 ```
 
 ### 示例 3：高精度精标（严格阈值）
 
 ```bash
-python label_gender_race.py -i D:\F5MTL\person_scene_seg\test -o D:\F5MTL\person_scene_seg\test\labels.json -d retinaface -c 0.8
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d retinaface -c 0.8
 ```
 
-### 示例 4：输出到输入目录同级
+### 可视化颜色说明
 
-```bash
-python label_gender_race.py -i D:\data\my_photos
-# 输出默认为 ./output/gender_race_labels.json
-```
-
-可视化图片中：
-- **蓝色框** = 男性
-- **红色框** = 女性
-- **紫色框** = 未知性别
+- **绿色框** = 人体（person）
+- **蓝色框** = 男性人脸
+- **红色框** = 女性人脸
+- **紫色框** = 未知性别人脸
 - 标签格式：`性别/人种` + `置信度%`
 
 ---
@@ -124,8 +121,6 @@ python label_gender_race.py -i D:\data\my_photos
 
 ## 5. 置信度阈值说明
 
-置信度表示模型对分类结果的确定程度（0~1），性别和人种共用同一阈值。
-
 | 阈值 | 效果 | 适用场景 |
 |------|------|----------|
 | `0.5` | 宽松，大部分直接标注 | 数据量少，希望尽量多标注 |
@@ -135,7 +130,7 @@ python label_gender_race.py -i D:\data\my_photos
 
 ---
 
-## 6. 输出格式详解
+## 6. 输出格式
 
 ### 6.1 JSON 整体结构
 
@@ -151,137 +146,81 @@ python label_gender_race.py -i D:\data\my_photos
 
 ```json
 "metadata": {
-  "tool": "F5 Gender & Race Auto-Labeling Tool",
+  "tool": "F5 Gender & Race Auto-Labeling Tool v2",
   "model": "deepface",
-  "detector_backend": "opencv",
+  "person_detector": "yolov8n",
+  "face_detector_backend": "retinaface",
   "conf_threshold": 0.6,
-  "total_images": 5,
-  "total_faces": 5,
-  "elapsed_seconds": 227.85,
-  "fps": 0.02
+  "total_images": 34,
+  "total_persons": 35,
+  "total_faces": 35,
+  "errors": 0,
+  "elapsed_seconds": 144.6,
+  "fps": 0.23
 }
 ```
 
-### 6.3 statistics
+### 6.3 labels（逐图标注）
 
 ```json
-"statistics": {
-  "male": 3,
-  "female": 1,
-  "unknown_gender": 1,
-  "asian": 0,
-  "white": 3,
-  "middle_eastern": 0,
-  "indian": 0,
-  "latino": 0,
-  "black": 0,
-  "unknown_race": 2,
-  "no_face_images": 0
+{
+  "image_path": "celeb_28102.jpg",
+  "image_abs_path": "D:\\...\\celeb_28102.jpg",
+  "person_count": 1,
+  "persons": [
+    {
+      "x1": 50, "y1": 30, "x2": 400, "y2": 600,
+      "label": "person",
+      "det_score": 0.9234
+    }
+  ],
+  "face_count": 1,
+  "faces": [
+    {
+      "x1": 101, "y1": 141, "x2": 539, "y2": 579,
+      "det_score": 0.9908,
+      "gender": 0, "gender_label": "Female", "gender_conf": 0.9908,
+      "raw_gender_scores": {"Woman": 0.9908, "Man": 0.0092},
+      "race": 1, "race_label": "White", "race_conf": 0.9912,
+      "raw_race_scores": {"asian": 0.0, "white": 0.9912, ...}
+    }
+  ]
 }
 ```
 
-### 6.4 labels（逐图标注）
-
-```json
-"labels": [
-  {
-    "image_path": "celeb_28271.jpg",
-    "image_abs_path": "D:\\F5MTL\\...\\celeb_28271.jpg",
-    "face_count": 1,
-    "faces": [
-      {
-        "x1": 0, "y1": 0, "x2": 639, "y2": 639,
-        "det_score": 0.9915,
-        "gender": 1,
-        "gender_label": "Male",
-        "gender_conf": 0.9915,
-        "raw_gender_scores": {
-          "Woman": 0.0085,
-          "Man": 0.9915
-        },
-        "race": 1,
-        "race_label": "White",
-        "race_conf": 0.9984,
-        "raw_race_scores": {
-          "asian": 0.0,
-          "indian": 0.0,
-          "black": 0.0,
-          "white": 0.9984,
-          "middle eastern": 0.0003,
-          "latino hispanic": 0.0014
-        }
-      }
-    ]
-  }
-]
-```
-
-### 6.5 字段说明
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `x1, y1, x2, y2` | int | 人脸框坐标（左上角、右下角） |
-| `det_score` | float | 检测置信度 |
-| `gender` | int | 性别枚举：0=Female, 1=Male, 2=Unknown |
-| `gender_label` | string | 性别文本标签 |
-| `gender_conf` | float | 性别置信度 (0~1) |
-| `raw_gender_scores` | dict | 性别原始分数（Woman/Man 各自的概率） |
-| `race` | int | 人种枚举（见下表） |
-| `race_label` | string | 人种文本标签 |
-| `race_conf` | float | 人种置信度 (0~1) |
-| `raw_race_scores` | dict | 人种原始分数（6 类各自的概率） |
-
-### 6.6 枚举映射表
+### 6.4 枚举映射表
 
 **性别 (gender)**
 
-| 值 | 标签 | F5 ODOT 枚举 |
-|----|------|--------------|
-| 0 | Female | `GENDER_FEMALE = 0` |
-| 1 | Male | `GENDER_MALE = 1` |
-| 2 | Unknown | `GENDER_UNKNOWN = 2` |
+| 值 | 标签 |
+|----|------|
+| 0 | Female |
+| 1 | Male |
+| 2 | Unknown |
 
 **人种 (race)**
 
 | 值 | 标签 | 含义 |
 |----|------|------|
-| 0 | Asian | 东亚/东南亚人 |
+| 0 | Asian | 东亚/东南亚 |
 | 1 | White | 白人 |
-| 2 | Middle Eastern | 中东人 |
-| 3 | Indian | 南亚/印度人 |
+| 2 | Middle Eastern | 中东 |
+| 3 | Indian | 南亚/印度 |
 | 4 | Latino | 拉丁裔 |
 | 5 | Black | 黑人 |
-| 6 | Unknown | 未知（置信度低于阈值） |
+| 6 | Unknown | 未知 |
 
 ---
 
-## 7. 运行效果示例
+## 7. 大规模数据集保护
 
-### 控制台输出
+v2 包含以下保护机制：
 
-```
-[INFO] 共找到 5 张图片
-[INFO] 置信度阈值: 0.6
-[INFO] 检测后端: opencv
-[INFO] 输出文件: D:\F5MTL\person_scene_seg\test\gender_race_labels.json
-------------------------------------------------------------
-[1/5] celeb_28270.jpg ... 1张人脸 -> ['Male/Unknown']
-[2/5] celeb_28271.jpg ... 1张人脸 -> ['Male/White']
-[3/5] celeb_28272.jpg ... 1张人脸 -> ['Male/White']
-[4/5] celeb_28273.jpg ... 1张人脸 -> ['Female/White']
-[5/5] celeb_28274.jpg ... 1张人脸 -> ['Unknown/Unknown']
-============================================================
-[DONE] 标注完成!
-  图片总数: 5
-  人脸总数: 5
-  性别 - 男性: 3, 女性: 1, 未知: 1
-  人种 - 亚洲人: 0, 白人: 3, 中东人: 0, 印度人: 0, 拉丁裔: 0, 黑人: 0, 未知: 2
-  无人脸图片: 0
-  耗时: 227.8s (0.0 fps)
-  输出: D:\F5MTL\person_scene_seg\test\gender_race_labels.json
-```
-
-> 注：首次运行耗时较长（下载模型权重），后续运行约 1~3 fps。
+1. **单图异常隔离** — 每张图片独立 try-catch，一张失败不影响后续
+2. **定期检查点** — 每 50 张自动保存中间结果（`offline_package` 版支持自定义间隔）
+3. **Ctrl+C 中断保护** — 中断时自动保存已处理结果
+4. **内存释放** — 每张图处理后释放内存，防止 OOM
+5. **错误统计** — 输出 JSON 中 `errors` 字段记录失败图片数
 
 ---
 
@@ -289,46 +228,56 @@ python label_gender_race.py -i D:\data\my_photos
 
 ### Q: 某张图片标注为 Unknown？
 
-说明模型对该图片的判断置信度低于阈值。可以：
-- 降低阈值：`--conf 0.5`
-- 换用更高精度的检测器：`--detector retinaface`
-- 人工复查该图片的 `raw_gender_scores` / `raw_race_scores`
+置信度低于阈值。可降低阈值 `--conf 0.5` 或换用 `--detector retinaface`。
 
-### Q: 一张图片检测到多个人脸？
+### Q: 检测到多个人体/人脸？
 
-工具会自动检测所有人脸，每个独立标注。`face_count` 显示数量，`faces` 数组包含每个人脸的详细信息。
+工具自动检测所有人体和人脸，每个独立标注。`person_count` / `face_count` 显示数量。
 
 ### Q: 人种置信度普遍偏低？
 
-这是正常的。人种分类本身难度较高，6 个类别之间的区分不如二分类（性别）明显。建议：
-- 对人种使用较低阈值（如 `0.4`）或直接使用 `dominant_race` 而不做过滤
-- 关注 `raw_race_scores` 中的概率分布，取 top-1 即可
+正常现象。建议对人种使用较低阈值，关注 `raw_race_scores` 概率分布。
 
 ### Q: 支持中文路径吗？
 
-支持。图片读取使用 `np.fromfile` + `cv2.imdecode`，兼容中文路径。
+支持。使用 `np.fromfile` + `cv2.imdecode` 兼容中文路径。
 
-### Q: 速度太慢怎么办？
+### Q: 速度太慢？
 
-- 使用 `opencv` 检测后端（最快）
+- 用 `opencv` 后端（最快）
 - 安装 GPU 版 TensorFlow：`pip install tensorflow[and-cuda]`
 - 分批处理，多机并行
 
-### Q: 模型权重放在哪里？
-
-权重位于工具目录下的 `.deepface/weights/`，脚本通过 `DEEPFACE_HOME` 环境变量自动指向该路径。无需手动配置。
-
-### Q: `raw_race_scores` 中的 key 和 RACE_MAP 不一致？
-
-deepface 返回的 key 是 `"latino hispanic"` 而非 `"latino"`，这不影响输出。`race` 字段已经过标准化映射（0~6），`raw_race_scores` 保留原始 key 供参考。
-
 ---
 
-## 9. deepface 模型性能参考
+## 9. 模型性能参考
 
 | 指标 | 数值 |
 |------|------|
-| 性别分类准确率 | 97.44% |
-| opencv 检测速度 | ~1-3 fps（CPU） |
-| mtcnn 检测速度 | ~0.5-1 fps（CPU） |
-| retinaface 检测速度 | ~0.1-0.3 fps（CPU） |
+| 性别分类准确率 | ~97.44% |
+| 人体检测（YOLOv8n） | ~1-2 fps |
+| 人脸检测（opencv） | ~1-3 fps |
+| 人脸检测（retinaface） | ~0.1-0.3 fps |
+
+---
+
+## 10. 离线部署
+
+需要在无网络的服务器上使用？请参见 `offline_package/` 目录：
+
+```bash
+# 1. 拷贝 offline_package 文件夹到目标服务器
+# 2. 从本地 .deepface/weights/ 拷贝 3 个模型到 offline_package/models/deepface/
+# 3. 拷贝 yolov8n.pt 到 offline_package/models/
+# 4. 安装依赖
+pip install -r offline_package/requirements.txt
+# 5. 运行
+python offline_package/scripts/label_gender_race.py -i <图片文件夹> -o <输出.json> -d retinaface
+```
+
+离线版增强功能：
+- 自定义检查点间隔：`--checkpoint 100`
+- 启动时自动验证所有模型文件是否存在
+- 支持 Windows（`install.bat`）和 Linux（`install.sh`）
+
+详见 `offline_package/README.md`。
