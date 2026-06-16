@@ -70,73 +70,33 @@ def _json_default(obj):
 
 # ─────────── 人体检测 ───────────
 
-# HOG 人体检测器（懒加载）
-_hog = None
+# YOLOv8 模型（懒加载）
+_yolo_model = None
 
-def _get_hog_detector():
-    global _hog
-    if _hog is None:
-        _hog = cv2.HOGDescriptor()
-        _hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-    return _hog
+def _get_yolo_model():
+    global _yolo_model
+    if _yolo_model is None:
+        from ultralytics import YOLO
+        _yolo_model = YOLO("yolov8n.pt")  # nano 版本，约 6MB，首次自动下载
+    return _yolo_model
 
 
-def detect_persons(img):
+def detect_persons(img, conf_threshold=0.5):
     """
-    使用 OpenCV HOG + SVM 检测人体，返回 [(x1, y1, x2, y2, score), ...] 列表。
+    使用 YOLOv8 检测人体（COCO class 0 = person）。
+    返回 [(x1, y1, x2, y2, score), ...] 列表。
     """
-    hog = _get_hog_detector()
-    h_img, w_img = img.shape[:2]
+    model = _get_yolo_model()
+    results = model(img, conf=conf_threshold, verbose=False, classes=[0])  # 只检测 person 类
 
-    # 检测人体
-    rects, weights = hog.detectMultiScale(
-        img,
-        winStride=(8, 8),
-        padding=(4, 4),
-        scale=1.05,
-    )
-
-    if len(rects) == 0:
-        return []
-
-    # NMS 去重
     persons = []
-    for (x, y, w, h), score in zip(rects, weights):
-        x, y, w, h = int(x), int(y), int(w), int(h)
-        # 过滤太小的检测
-        if w < 60 or h < 120:
-            continue
-        # 限制在图片范围内
-        x1 = max(0, x)
-        y1 = max(0, y)
-        x2 = min(w_img, x + w)
-        y2 = min(h_img, y + h)
-        persons.append((x1, y1, x2, y2, float(score)))
+    for r in results:
+        for box in r.boxes:
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+            score = float(box.conf[0])
+            persons.append((int(x1), int(y1), int(x2), int(y2), score))
 
-    # 简单 NMS: 按分数排序，去除重叠过多的框
-    persons.sort(key=lambda p: p[4], reverse=True)
-    keep = []
-    for p in persons:
-        px1, py1, px2, py2, pscore = p
-        is_dup = False
-        for k in keep:
-            kx1, ky1, kx2, ky2, _ = k
-            # 计算 IoU
-            ix1 = max(px1, kx1)
-            iy1 = max(py1, ky1)
-            ix2 = min(px2, kx2)
-            iy2 = min(py2, ky2)
-            inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
-            area_p = (px2 - px1) * (py2 - py1)
-            area_k = (kx2 - kx1) * (ky2 - ky1)
-            union = area_p + area_k - inter
-            if union > 0 and inter / union > 0.5:
-                is_dup = True
-                break
-        if not is_dup:
-            keep.append(p)
-
-    return keep
+    return persons
 
 
 # ─────────── 核心分析 ───────────
@@ -420,7 +380,7 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
         "metadata": {
             "tool": "F5 Gender & Race Auto-Labeling Tool v2",
             "model": "deepface",
-            "person_detector": "opencv_hog",
+            "person_detector": "yolov8n",
             "face_detector_backend": detector_backend,
             "conf_threshold": conf_threshold,
             "total_images": stats["total_images"],
