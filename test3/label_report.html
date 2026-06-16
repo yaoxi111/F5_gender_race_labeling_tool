@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>F5 v2 test3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f0f2f5;padding:24px;color:#333}
+h1{text-align:center;margin-bottom:6px;font-size:26px}.st{text-align:center;color:#888;margin-bottom:20px;font-size:13px}
+.sc{display:flex;justify-content:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}.sk{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;min-width:70px}.sk .n{font-size:20px;font-weight:700}.sk .l{font-size:10px;color:#888;margin-top:2px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+th{background:#1a1a2e;color:#fff;padding:7px 4px;font-size:11px;font-weight:600}th.gp{background:#2e7d32}th.gf{background:#1565c0}
+td{padding:4px;text-align:center;vertical-align:middle;border-bottom:1px solid #f0f0f0;font-size:11px}tr:hover{background:#f8f9ff}
+td img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:2px solid #e0e0e0;display:block;margin:0 auto;cursor:pointer;transition:transform .2s}
+td img:hover{transform:scale(2.5);z-index:100;position:relative;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.tag{display:inline-block;padding:2px 5px;border-radius:10px;font-size:10px;font-weight:600}
+.pt{background:#e8f5e9;color:#2e7d32}.male{background:#e3f2fd;color:#1565c0}.female{background:#fce4ec;color:#c62828}.unknown-g{background:#f3e5f5;color:#6a1b9a}
+.white{background:#fff3e0;color:#e65100}.asian{background:#e8f5e9;color:#2e7d32}.black{background:#efebe9;color:#4e342e}.indian{background:#fff8e1;color:#f57f17}.middle-eastern{background:#f3e5f5;color:#7b1fa2}.unknown-r{background:#eceff1;color:#546e7a}
+.cf{font-size:10px}.conf-high{color:#2e7d32}.conf-mid{color:#f57f17}.conf-low{color:#c62828;font-weight:600}
+.i{font-weight:700;color:#555}.b{font-size:10px;color:#999;font-family:monospace}.nd{color:#ddd}
+.lg{display:flex;justify-content:center;gap:14px;margin-bottom:14px;font-size:11px}.lg span{display:flex;align-items:center;gap:3px}.lg .d{width:11px;height:11px;border-radius:3px;display:inline-block}
+</style></head><body>
+<h1>F5 v2 test3</h1>
+<p class="st">8 pics &middot; YOLOv8 person + RetinaFace face + DeepFace &middot; conf 0.6</p>
+<div class="sc">
+<div class="sk"><div class="n">8</div><div class="l">Total</div></div>
+<div class="sk"><div class="n" style="color:#2e7d32">8</div><div class="l">Person</div></div>
+<div class="sk"><div class="n" style="color:#1565c0">8</div><div class="l">Face</div></div>
+<div class="sk"><div class="n" style="color:#1565c0">2</div><div class="l">Male</div></div>
+<div class="sk"><div class="n" style="color:#c62828">5</div><div class="l">Female</div></div>
+<div class="sk"><div class="n" style="color:#2e7d32">2</div><div class="l">Asian</div></div>
+<div class="sk"><div class="n" style="color:#e65100">4</div><div class="l">White</div></div>
+<div class="sk"><div class="n" style="color:#546e7a">2</div><div class="l">Unknown</div></div>
+</div>
+<div class="lg">
+<span><span class="d" style="background:#00FF00"></span> Person</span>
+<span><span class="d" style="background:#FF8000"></span> Male</span>
+<span><span class="d" style="background:#0050FF"></span> Female</span>
+<span><span class="d" style="background:#B400B4"></span> Unknown</span>
+<span style="color:#888">Hover to zoom</span>
+</div>
+<table><thead><tr>
+<th>#</th><th>Orig</th><th>Annotated</th><th>File</th>
+<th class="gp">Person Box</th><th class="gp">Label</th><th class="gp">Conf</th>
+<th class="gf">Face Box</th><th class="gf">Gender</th><th class="gf">G Conf</th><th class="gf">Race</th><th class="gf">R Conf</th>
+</tr></thead><tbody>
+<tr><td class="i">1</td><td><img src="atr_15728.jpg"></td><td><img src="viz/atr_15728.jpg"></td><td>atr_15728.jpg</td><td class="b">145,74<br>292,554</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.87</span></td><td class="b">204,94<br>238,143</td><td><span class="tag female">Female</span></td><td><span class="conf conf-high">87.0%</span></td><td><span class="tag asian">Asian</span></td><td><span class="conf conf-mid">64.3%</span></td></tr>
+<tr><td class="i">2</td><td><img src="atr_15729.jpg"></td><td><img src="viz/atr_15729.jpg"></td><td>atr_15729.jpg</td><td class="b">97,32<br>304,604</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.93</span></td><td class="b">166,71<br>215,138</td><td><span class="tag male">Male</span></td><td><span class="conf conf-high">99.1%</span></td><td><span class="tag unknown-r">Unknown</span></td><td><span class="conf conf-low">47.5%</span></td></tr>
+<tr><td class="i">3</td><td><img src="atr_15730.jpg"></td><td><img src="viz/atr_15730.jpg"></td><td>atr_15730.jpg</td><td class="b">43,43<br>242,585</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.89</span></td><td class="b">157,64<br>203,131</td><td><span class="tag female">Female</span></td><td><span class="conf conf-high">94.8%</span></td><td><span class="tag white">White</span></td><td><span class="conf conf-mid">67.4%</span></td></tr>
+<tr><td class="i">4</td><td><img src="atr_15731.jpg"></td><td><img src="viz/atr_15731.jpg"></td><td>atr_15731.jpg</td><td class="b">118,50<br>356,614</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.75</span></td><td class="b">212,108<br>256,148</td><td><span class="tag male">Male</span></td><td><span class="conf conf-high">92.5%</span></td><td><span class="tag white">White</span></td><td><span class="conf conf-mid">68.6%</span></td></tr>
+<tr><td class="i">5</td><td><img src="atr_15732.jpg"></td><td><img src="viz/atr_15732.jpg"></td><td>atr_15732.jpg</td><td class="b">137,29<br>312,640</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.90</span></td><td class="b">185,49<br>225,118</td><td><span class="tag female">Female</span></td><td><span class="conf conf-mid">70.9%</span></td><td><span class="tag unknown-r">Unknown</span></td><td><span class="conf conf-low">55.0%</span></td></tr>
+<tr><td class="i">6</td><td><img src="atr_15733.jpg"></td><td><img src="viz/atr_15733.jpg"></td><td>atr_15733.jpg</td><td class="b">136,106<br>273,600</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.89</span></td><td class="b">199,119<br>236,171</td><td><span class="tag female">Female</span></td><td><span class="conf conf-high">99.8%</span></td><td><span class="tag white">White</span></td><td><span class="conf conf-high">81.5%</span></td></tr>
+<tr><td class="i">7</td><td><img src="atr_15734.jpg"></td><td><img src="viz/atr_15734.jpg"></td><td>atr_15734.jpg</td><td class="b">82,36<br>327,635</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.92</span></td><td class="b">167,65<br>210,126</td><td><span class="tag unknown-g">Unknown</span></td><td><span class="conf conf-low">59.8%</span></td><td><span class="tag white">White</span></td><td><span class="conf conf-mid">77.7%</span></td></tr>
+<tr><td class="i">8</td><td><img src="atr_15735.jpg"></td><td><img src="viz/atr_15735.jpg"></td><td>atr_15735.jpg</td><td class="b">84,43<br>371,583</td><td><span class="tag pt">person</span></td><td><span class="conf conf-high">0.87</span></td><td class="b">234,71<br>279,134</td><td><span class="tag female">Female</span></td><td><span class="conf conf-high">99.9%</span></td><td><span class="tag asian">Asian</span></td><td><span class="conf conf-high">99.3%</span></td></tr>
+</tbody></table>
+<p style="text-align:center;margin-top:16px;color:#aaa;font-size:10px">Box: top-left(x1,y1) bottom-right(x2,y2)</p>
+</body></html>

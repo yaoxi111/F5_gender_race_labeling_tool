@@ -1,15 +1,19 @@
 {
   "metadata": {
-    "tool": "F5 Gender & Race Auto-Labeling Tool",
+    "tool": "F5 Gender & Race Auto-Labeling Tool v2",
     "model": "deepface",
-    "detector_backend": "retinaface",
+    "person_detector": "yolov8n",
+    "face_detector_backend": "retinaface",
     "conf_threshold": 0.6,
     "total_images": 8,
+    "total_persons": 8,
     "total_faces": 8,
-    "elapsed_seconds": 70.01,
-    "fps": 0.11
+    "elapsed_seconds": 95.04,
+    "fps": 0.08
   },
   "statistics": {
+    "persons": 8,
+    "no_person_images": 0,
     "male": 2,
     "female": 5,
     "unknown_gender": 1,
@@ -26,6 +30,17 @@
     {
       "image_path": "atr_15728.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15728.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 145,
+          "y1": 74,
+          "x2": 292,
+          "y2": 554,
+          "label": "person",
+          "det_score": 0.8669
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -58,6 +73,17 @@
     {
       "image_path": "atr_15729.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15729.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 97,
+          "y1": 32,
+          "x2": 304,
+          "y2": 604,
+          "label": "person",
+          "det_score": 0.9347
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -90,6 +116,17 @@
     {
       "image_path": "atr_15730.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15730.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 43,
+          "y1": 43,
+          "x2": 242,
+          "y2": 585,
+          "label": "person",
+          "det_score": 0.8877
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -122,6 +159,17 @@
     {
       "image_path": "atr_15731.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15731.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 118,
+          "y1": 50,
+          "x2": 356,
+          "y2": 614,
+          "label": "person",
+          "det_score": 0.7499
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -154,6 +202,17 @@
     {
       "image_path": "atr_15732.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15732.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 137,
+          "y1": 29,
+          "x2": 312,
+          "y2": 640,
+          "label": "person",
+          "det_score": 0.9026
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -186,6 +245,17 @@
     {
       "image_path": "atr_15733.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15733.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 136,
+          "y1": 106,
+          "x2": 273,
+          "y2": 600,
+          "label": "person",
+          "det_score": 0.8862
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -218,6 +288,17 @@
     {
       "image_path": "atr_15734.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15734.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 82,
+          "y1": 36,
+          "x2": 327,
+          "y2": 635,
+          "label": "person",
+          "det_score": 0.9159
+        }
+      ],
       "face_count": 1,
       "faces": [
         {
@@ -250,6 +331,17 @@
     {
       "image_path": "atr_15735.jpg",
       "image_abs_path": "D:\\F5MTL\\person_scene_seg\\F5_gender_race_labeling_tool\\test3\\atr_15735.jpg",
+      "person_count": 1,
+      "persons": [
+        {
+          "x1": 84,
+          "y1": 43,
+          "x2": 371,
+          "y2": 583,
+          "label": "person",
+          "det_score": 0.8727
+        }
+      ],
       "face_count": 1,
       "faces": [
         {

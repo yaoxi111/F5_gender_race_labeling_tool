@@ -33,3 +33,4 @@ production/
 
 # Copied Haar cascade
 haarcascade_frontalface_default.xml
+offline_package/models/
