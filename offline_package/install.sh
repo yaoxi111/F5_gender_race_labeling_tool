@@ -13,9 +13,9 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # 安装依赖
-echo "[1/2] 安装 Python 依赖..."
-pip3 install -r "$SCRIPT_DIR/requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple/ || \
-pip3 install -r "$SCRIPT_DIR/requirements.txt"
+echo "[1/2] 安装 Python 依赖（离线模式）..."
+pip3 install --no-index --find-links="$SCRIPT_DIR/packages" -r "$SCRIPT_DIR/requirements.txt" || \
+pip3 install -r "$SCRIPT_DIR/requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 echo
 echo "[2/2] 验证模型文件..."

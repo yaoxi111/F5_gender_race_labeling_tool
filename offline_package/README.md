@@ -4,11 +4,16 @@
 
 ```
 offline_package/
-├── install.bat                    # 一键安装依赖
+├── install.bat                    # Windows 一键安装
+├── install.sh                     # Linux 一键安装
 ├── requirements.txt               # Python 依赖清单
 ├── README.md                      # 本文档
 ├── scripts/
 │   └── label_gender_race.py       # 主脚本（离线增强版）
+├── packages/                      # pip 离线包（约 1GB）
+│   ├── tensorflow-*.whl
+│   ├── torch-*.whl
+│   └── ... (80+ 个 .whl 文件)
 └── models/
     ├── yolov8n.pt                 # YOLOv8 人体检测模型 (6MB)
     └── deepface/
@@ -17,19 +22,21 @@ offline_package/
         └── retinaface.h5              # RetinaFace 人脸检测 (113MB)
 ```
 
+**总大小：约 1.8 GB**
+
 ## 部署步骤
 
 ### 1. 拷贝整个 `offline_package` 文件夹到目标服务器
 
-### 2. 安装 Python 依赖
+### 2. 安装 Python 依赖（完全离线）
 
 ```bash
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+pip install --no-index --find-links=packages -r requirements.txt
 ```
 
-或双击 `install.bat`（Windows）。
+或双击 `install.bat`（Windows）/ `bash install.sh`（Linux）。
 
-> ⚠️ 首次安装需要联网下载 Python 包。模型权重已内置，无需联网。
+> ✅ 所有依赖已内置在 `packages/` 目录中，无需联网。
 
 ### 3. 运行标注
 

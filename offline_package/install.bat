@@ -13,12 +13,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 安装依赖（从 PyPI）
-echo [1/2] 安装 Python 依赖...
-pip install -r "%~dp0requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple/
+:: 安装依赖（从本地 packages 目录，完全离线）
+echo [1/2] 安装 Python 依赖（离线模式）...
+pip install --no-index --find-links="%~dp0packages" -r "%~dp0requirements.txt"
 if errorlevel 1 (
-    echo [WARN] 清华源失败，尝试默认源...
-    pip install -r "%~dp0requirements.txt"
+    echo [WARN] 离线安装失败，尝试联网安装...
+    pip install -r "%~dp0requirements.txt" -i https://pypi.tuna.tsinghua.edu.cn/simple/
 )
 
 echo.
