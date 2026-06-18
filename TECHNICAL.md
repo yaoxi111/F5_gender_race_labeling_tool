@@ -1,11 +1,12 @@
-# F5 性别与人种自动标注工具 — 技术文档
+# F5 性别与人种自动标注工具 v2 — 技术文档
 
 ## 1. 项目概述
 
 ### 1.1 目标
 
-为 F5 人物场景分割项目提供自动化的人脸属性标注能力，对图片中的人脸进行：
-- **人脸检测**：定位图片中所有人脸的位置（边界框）
+为 F5 人物场景分割项目提供自动化的 **人体 + 人脸属性标注** 能力：
+- **人体检测**：定位图片中所有人体的位置（YOLOv8）
+- **人脸检测**：定位图片中所有人脸的位置（RetinaFace / MTCNN / OpenCV）
 - **性别分类**：判定人脸的性别（Male / Female）
 - **人种分类**：判定人脸的种族（Asian / White / Black / Indian / Middle Eastern / Latino）
 
@@ -15,9 +16,10 @@
 
 | 组件 | 技术方案 | 说明 |
 |------|----------|------|
-| 人脸检测 | DeepFace 内置检测器（RetinaFace / MTCNN / OpenCV） | 多后端可选，RetinaFace 精度最高 |
+| 人体检测 | YOLOv8 Nano (ultralytics) | COCO 预训练，class 0 = person |
+| 人脸检测 | DeepFace 内置检测器 | RetinaFace / MTCNN / OpenCV 可选 |
 | 性别分类 | DeepFace 预训练 VGG 模型 | 基于 VGG-Face 微调，准确率 ~97% |
-| 人种分类 | DeepFace 预训练 VGG 模型 | 6 分类（Asian/White/Black/Indian/Middle Eastern/Latino） |
+| 人种分类 | DeepFace 预训练 VGG 模型 | 6 分类 |
 | 图像处理 | OpenCV (cv2) | 图片读取、绘图、编码 |
 | 数据处理 | NumPy | 数组运算、图片解码 |
 
@@ -36,30 +38,38 @@
 │ collect_images│
 └──────┬──────┘
        │
-       ▼ (逐张处理)
-┌─────────────────────────────────────────┐
-│           DeepFace.analyze()             │
-│  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │ 人脸检测  │→ │ 人脸对齐  │→ │ 属性分类│ │
-│  │(Detector) │  │ (Align)  │  │(Gender │ │
-│  │          │  │          │  │ +Race) │ │
-│  └──────────┘  └──────────┘  └────────┘ │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-        ┌─────────────────────┐
-        │   后处理 & 过滤      │
-        │  - 置信度过滤        │
-        │  - 小人脸过滤(<30px) │
-        │  - 枚举映射          │
-        └────────┬────────────┘
-                 │
-       ┌─────────┴─────────┐
-       ▼                   ▼
-┌──────────────┐   ┌──────────────┐
-│  JSON 标注    │   │  可视化图片   │
-│  输出文件     │   │  (可选)      │
-└──────────────┘   └──────────────┘
+       ▼ (逐张处理，独立 try-catch)
+┌──────────────────────────────────────────────────┐
+│                                                  │
+│  ┌─────────────────┐                             │
+│  │ YOLOv8 人体检测  │→ person bounding box       │
+│  └─────────────────┘                             │
+│                                                  │
+│  ┌─────────────────────────────────────────┐     │
+│  │       DeepFace.analyze()                │     │
+│  │  ┌──────────┐ ┌──────────┐ ┌────────┐  │     │
+│  │  │ 人脸检测  │→│ 人脸对齐  │→│ 属性分类│  │     │
+│  │  │(Detector) │ │ (Align)  │ │(Gender │  │     │
+│  │  └──────────┘ └──────────┘ │ +Race) │  │     │
+│  │                            └────────┘  │     │
+│  └─────────────────────────────────────────┘     │
+│                                                  │
+└──────────────────────┬───────────────────────────┘
+                       │
+                       ▼
+            ┌─────────────────────┐
+            │   后处理 & 过滤      │
+            │  - 置信度过滤        │
+            │  - 小人脸过滤(<30px) │
+            │  - 枚举映射          │
+            └────────┬────────────┘
+                     │
+           ┌─────────┴─────────┐
+           ▼                   ▼
+    ┌──────────────┐   ┌──────────────┐
+    │  JSON 标注    │   │  可视化图片   │
+    │  输出文件     │   │  (可选)      │
+    └──────────────┘   └──────────────┘
 ```
 
 ### 2.2 核心模块
@@ -67,28 +77,53 @@
 | 模块 | 函数 | 职责 |
 |------|------|------|
 | 图片采集 | `collect_images()` | 递归扫描目录，收集图片路径 |
-| 核心分析 | `analyze_image()` | 调用 DeepFace 完成检测+分类 |
-| 可视化 | `draw_faces()` | 在图片上绘制人脸框和标签 |
-| 主流程 | `run_labeling()` | 编排整个标注流程，统计结果 |
+| 人体检测 | `detect_persons()` | YOLOv8 检测人体区域 |
+| 人脸分析 | `analyze_image()` | DeepFace 检测人脸 + 性别/人种分类 |
+| 可视化 | `draw_results()` | 绘制人体框（绿色）+ 人脸框（蓝/红/紫） |
+| 主流程 | `run_labeling()` | 编排标注流程，含崩溃保护和检查点 |
 | 入口 | `main()` | 命令行参数解析 |
 
 ---
 
 ## 3. 技术栈详解
 
-### 3.1 DeepFace 框架
+### 3.1 YOLOv8 — 人体检测
 
-[DeepFace](https://github.com/serengil/deepface) 是一个轻量级的人脸识别与属性分析 Python 库，封装了多种前沿人脸分析模型。
+[YOLOv8](https://github.com/ultralytics/ultralytics) 是 Ultralytics 推出的目标检测模型，本工具使用 Nano 版本（yolov8n.pt，6MB）。
 
-**本工具使用的核心 API**：
+**核心特点**：
+- 基于 COCO 数据集预训练，包含 80 个目标类别
+- 本工具只使用 class 0（person）进行人体检测
+- 速度快（~1-2 fps），精度高
+- 内置 NMS（非极大值抑制）去重
 
+**调用方式**：
+```python
+from ultralytics import YOLO
+model = YOLO("yolov8n.pt")
+results = model(img, conf=0.5, verbose=False, classes=[0])  # 只检测 person
+```
+
+**返回结构**：
+```python
+for r in results:
+    for box in r.boxes:
+        x1, y1, x2, y2 = box.xyxy[0]  # 人体框坐标
+        score = box.conf[0]            # 置信度
+```
+
+### 3.2 DeepFace — 人脸属性分析
+
+[DeepFace](https://github.com/serengil/deepface) 是一个轻量级的人脸识别与属性分析 Python 库。
+
+**核心 API**：
 ```python
 DeepFace.analyze(
-    img_path=img,                    # 输入图片（numpy array 或文件路径）
-    actions=["gender", "race"],      # 分析任务
-    detector_backend="retinaface",   # 检测后端
-    enforce_detection=False,         # 未检测到人脸时不抛异常
-    silent=True,                     # 静默模式
+    img_path=img,
+    actions=["gender", "race"],
+    detector_backend="retinaface",
+    enforce_detection=False,
+    silent=True,
 )
 ```
 
@@ -96,80 +131,56 @@ DeepFace.analyze(
 ```python
 {
     "region": {"x": 100, "y": 50, "w": 200, "h": 250},  # 人脸框
-    "dominant_gender": "Male",          # 性别
-    "gender": {"Man": 95.2, "Woman": 4.8},  # 性别概率
-    "dominant_race": "White",           # 人种
-    "race": {"white": 85.0, "asian": 10.0, ...}  # 人种概率
+    "dominant_gender": "Male",
+    "gender": {"Man": 95.2, "Woman": 4.8},
+    "dominant_race": "White",
+    "race": {"white": 85.0, "asian": 10.0, ...}
 }
 ```
 
-### 3.2 人脸检测后端
+### 3.3 人脸检测后端对比
 
-DeepFace 支持多种人脸检测后端，本工具支持以下 7 种：
+| 后端 | 算法 | 速度 | 精度 | 模型大小 |
+|------|------|------|------|----------|
+| `opencv` | Haar Cascade | ★★★★★ | ★★★ | 内置 |
+| `mtcnn` | MTCNN | ★★★ | ★★★★ | ~2MB |
+| `retinaface` | RetinaFace | ★★ | ★★★★★ | ~119MB |
 
-| 后端 | 算法 | 速度 | 精度 | 模型大小 | 说明 |
-|------|------|------|------|----------|------|
-| `opencv` | Haar Cascade | ★★★★★ | ★★★ | 内置 | OpenCV 经典级联分类器，速度最快 |
-| `ssd` | SSD + ResNet | ★★★★ | ★★★ | ~10MB | 单次多尺度检测 |
-| `mediapipe` | BlazeFace | ★★★★ | ★★★★ | ~1MB | Google 轻量级人脸检测 |
-| `mtcnn` | MTCNN | ★★★ | ★★★★ | ~2MB | 三阶级联网络（P-Net/R-Net/O-Net） |
-| `fastmtcnn` | FastMTCNN | ★★★★ | ★★★★ | ~2MB | MTCNN 优化版本 |
-| `yolov8n` | YOLOv8 Nano | ★★★★ | ★★★★ | ~6MB | Ultralytics 轻量检测 |
-| `retinaface` | RetinaFace | ★★ | ★★★★★ | ~119MB | **推荐**，精度最高，特征点定位最准 |
+**RetinaFace**：基于 FPN 的多尺度人脸检测，同时预测人脸框和 5 个面部关键点，在 WIDER FACE 数据集上达到 SOTA 精度。
 
-**RetinaFace 简介**：
-- 基于特征金字塔网络（FPN）的多尺度人脸检测
-- 同时预测人脸框和 5 个面部关键点（双眼、鼻尖、嘴角）
-- 在 WIDER FACE 数据集上达到 SOTA 精度
-- 模型文件：`retinaface.h5`（119MB，首次使用时自动下载）
+### 3.4 分类模型
 
-### 3.3 性别分类模型
-
-- 架构：基于 VGG-Face 微调的二分类网络
-- 输入：224×224 RGB 人脸图片（经对齐和归一化）
-- 输出：`Woman` / `Man` 两个类别的概率
-- 准确率：~97.44%
-- 模型文件：`gender_model_weights.h5`（~512MB）
-
-### 3.4 人种分类模型
-
-- 架构：基于 VGG-Face 微调的 6 分类网络
-- 输入：224×224 RGB 人脸图片
-- 输出：6 个种族类别的概率分布
-  - Asian（东亚/东南亚）
-  - White（白人）
-  - Black（黑人）
-  - Indian（南亚/印度）
-  - Middle Eastern（中东）
-  - Latino Hispanic（拉丁裔）
-- 模型文件：`race_model_single_batch.h5`（~512MB）
+| 模型 | 架构 | 输入 | 输出 | 准确率 |
+|------|------|------|------|--------|
+| 性别分类 | VGG-Face 微调 | 224×224 RGB | Woman/Man 概率 | ~97.44% |
+| 人种分类 | VGG-Face 微调 | 224×224 RGB | 6 类概率分布 | ~90% |
 
 ### 3.5 OpenCV (cv2)
 
-用途：
 - 图片读取：`cv2.imdecode()` + `np.fromfile()` 支持中文路径
 - 图片编码：`cv2.imencode()` 保存可视化结果
-- 绘图：`cv2.rectangle()` / `cv2.putText()` 绘制人脸框和标签
-
-### 3.6 NumPy
-
-用途：
-- 图片解码：`np.fromfile()` 读取原始字节
-- 数组类型处理：JSON 序列化时的类型转换
+- 绘图：`cv2.rectangle()` / `cv2.putText()` 绘制框和标签
 
 ---
 
 ## 4. 数据处理流程
 
-### 4.1 图片读取（支持中文路径）
+### 4.1 图片读取
 
 ```python
-# Windows 中文路径兼容方案
-raw = np.fromfile(img_path, dtype=np.uint8)  # 读取原始字节
-img = cv2.imdecode(raw, cv2.IMREAD_COLOR)     # 解码为 BGR 图片
+# Windows 中文路径兼容
+raw = np.fromfile(img_path, dtype=np.uint8)
+img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
 ```
 
-### 4.2 人脸检测 + 分类
+### 4.2 人体检测
+
+```python
+# YOLOv8 检测人体
+persons = detect_persons(img)  # 返回 [(x1, y1, x2, y2, score), ...]
+```
+
+### 4.3 人脸检测 + 分类
 
 ```python
 # DeepFace.analyze() 内部流程：
@@ -180,190 +191,176 @@ img = cv2.imdecode(raw, cv2.IMREAD_COLOR)     # 解码为 BGR 图片
 # 5. 人种分类 (VGG 模型)
 ```
 
-### 4.3 置信度过滤
+### 4.4 过滤逻辑
 
 ```python
-# 性别
-if gender_conf < conf_threshold:
-    gender_id = 2  # Unknown
-else:
-    gender_id = GENDER_MAP.get(gender_label, 2)
-
-# 人种
-if race_conf < conf_threshold:
-    race_id = 6  # Unknown
-else:
-    race_id = RACE_MAP.get(race_label.lower(), 6)
-```
-
-### 4.4 小人脸过滤
-
-```python
-# 过滤掉宽或高 < 30 像素的微小人脸
+# 小人脸过滤
 if w < 30 or h < 30:
     continue
+
+# 置信度过滤
+if gender_conf < conf_threshold:
+    gender_id = 2  # Unknown
+if race_conf < conf_threshold:
+    race_id = 6  # Unknown
 ```
 
 ---
 
-## 5. 输出格式
+## 5. 崩溃保护机制（v2 新增）
 
-### 5.1 JSON 结构
+针对大规模数据集（几万~几十万张）设计：
+
+| 机制 | 实现方式 | 说明 |
+|------|----------|------|
+| 单图异常隔离 | 每张图独立 try-catch | 一张崩了不影响后续 |
+| 定期检查点 | 每 N 张保存中间 JSON | 默认 50 张，可配置 |
+| Ctrl+C 中断保护 | KeyboardInterrupt 捕获 | 中断时保存已处理结果 |
+| 内存释放 | del + gc.collect() | 每张图处理后释放 |
+| 错误统计 | errors 字段 | 输出 JSON 记录失败数 |
+
+---
+
+## 6. 输出格式
+
+### 6.1 JSON 结构
 
 ```json
 {
   "metadata": {
-    "tool": "F5 Gender & Race Auto-Labeling Tool",
-    "model": "deepface",
-    "detector_backend": "retinaface",
+    "tool": "F5 Gender & Race Auto-Labeling Tool v2",
+    "person_detector": "yolov8n",
+    "face_detector_backend": "retinaface",
     "conf_threshold": 0.6,
-    "total_images": 34,
-    "total_faces": 35,
-    "elapsed_seconds": 144.6,
-    "fps": 0.23
+    "total_images": 18,
+    "total_persons": 18,
+    "total_faces": 17,
+    "errors": 0,
+    "elapsed_seconds": 125.3,
+    "fps": 0.14
   },
-  "statistics": {
-    "male": 19, "female": 16, "unknown_gender": 0,
-    "asian": 0, "white": 18, "middle_eastern": 0,
-    "indian": 0, "latino": 0, "black": 2, "unknown_race": 15,
-    "no_face_images": 0
-  },
+  "statistics": { ... },
   "labels": [
     {
-      "image_path": "celeb_28102.jpg",
-      "image_abs_path": "D:\\...\\celeb_28102.jpg",
+      "image_path": "photo001.jpg",
+      "person_count": 1,
+      "persons": [{"x1": 50, "y1": 30, "x2": 400, "y2": 600, "label": "person", "det_score": 0.92}],
       "face_count": 1,
-      "faces": [
-        {
-          "x1": 101, "y1": 141, "x2": 539, "y2": 579,
-          "det_score": 0.9908,
-          "gender": 0,
-          "gender_label": "Female",
-          "gender_conf": 0.9908,
-          "raw_gender_scores": {"Woman": 0.9908, "Man": 0.0092},
-          "race": 1,
-          "race_label": "White",
-          "race_conf": 0.9912,
-          "raw_race_scores": {"asian": 0.0, "white": 0.9912, ...}
-        }
-      ]
+      "faces": [{"x1": 101, "y1": 141, "x2": 539, "y2": 579, "gender_label": "Female", "race_label": "White", ...}]
     }
   ]
 }
 ```
 
-### 5.2 枚举映射
+### 6.2 枚举映射
 
-**性别 (gender)**
+**性别 (gender)**：0=Female, 1=Male, 2=Unknown
 
-| 值 | 标签 | 含义 |
-|----|------|------|
-| 0 | Female | 女性 |
-| 1 | Male | 男性 |
-| 2 | Unknown | 未知（置信度低于阈值） |
-
-**人种 (race)**
-
-| 值 | 标签 | 含义 |
-|----|------|------|
-| 0 | Asian | 东亚/东南亚人 |
-| 1 | White | 白人 |
-| 2 | Middle Eastern | 中东人 |
-| 3 | Indian | 南亚/印度人 |
-| 4 | Latino | 拉丁裔 |
-| 5 | Black | 黑人 |
-| 6 | Unknown | 未知（置信度低于阈值） |
+**人种 (race)**：0=Asian, 1=White, 2=Middle Eastern, 3=Indian, 4=Latino, 5=Black, 6=Unknown
 
 ---
 
-## 6. 可视化模块
+## 7. 可视化模块
 
-### 6.1 颜色方案
+### 7.1 双层绘制
 
-| 性别 | 框颜色 (BGR) | 说明 |
-|------|-------------|------|
-| Female | (0, 80, 255) 红色 | 女性 |
-| Male | (255, 128, 0) 蓝色 | 男性 |
-| Unknown | (180, 0, 180) 紫色 | 未知性别 |
+| 层级 | 颜色 | 内容 |
+|------|------|------|
+| 底层 | 绿色 (0,255,0) | 人体框 + "person" 标签 |
+| 上层 | 蓝色 (255,128,0) | 男性人脸框 + 性别/人种标签 |
+| 上层 | 红色 (0,80,255) | 女性人脸框 + 性别/人种标签 |
+| 上层 | 紫色 (180,0,180) | 未知性别人脸框 |
 
-### 6.2 标签格式
+### 7.2 标签格式
 
-每张人脸框上方显示两行标签：
-- 第一行：`性别/人种`（如 `Male/White`）
-- 第二行：`性别置信度%/人种置信度%`（如 `98%/99%`）
-
-### 6.3 自适应布局
-
-- 标签默认显示在人脸框上方
-- 若超出图片顶部边界，自动调整到框内显示
+- 人体：`person`
+- 人脸第一行：`性别/人种`（如 `Male/White`）
+- 人脸第二行：`性别置信度%/人种置信度%`（如 `98%/99%`）
 
 ---
 
-## 7. 模型文件说明
+## 8. 模型文件
 
-所有模型权重存放在 `.deepface/weights/` 目录：
+| 文件 | 大小 | 用途 | 位置 |
+|------|------|------|------|
+| `yolov8n.pt` | 6MB | YOLOv8 人体检测 | 工具根目录 |
+| `gender_model_weights.h5` | 512MB | 性别分类 | `.deepface/weights/` |
+| `race_model_single_batch.h5` | 512MB | 人种分类 | `.deepface/weights/` |
+| `retinaface.h5` | 113MB | RetinaFace 人脸检测 | `.deepface/weights/` |
 
-| 文件 | 大小 | 用途 | 首次获取方式 |
-|------|------|------|-------------|
-| `gender_model_weights.h5` | ~512MB | 性别分类 | 已内置 |
-| `race_model_single_batch.h5` | ~512MB | 人种分类 | 已内置 |
-| `retinaface.h5` | ~119MB | RetinaFace 人脸检测 | 首次使用 `-d retinaface` 时自动下载 |
+**总权重大小：约 1.14 GB**
 
-通过设置环境变量 `DEEPFACE_HOME` 指向工具目录，确保 DeepFace 使用本地权重：
+通过环境变量 `DEEPFACE_HOME` 指向本地权重目录：
 ```python
 os.environ["DEEPFACE_HOME"] = _SCRIPT_DIR
 ```
 
 ---
 
-## 8. 性能指标
+## 9. 离线部署方案
 
-### 8.1 测试环境
+### 9.1 包结构
 
-- CPU: Intel/AMD x86_64
-- Python: 3.12
-- TensorFlow: 2.x (tf-keras)
+```
+offline_package/
+├── scripts/label_gender_race.py   # 主脚本（离线增强版）
+├── packages/                      # 80+ 个 pip 离线包 (~1GB)
+├── models/                        # 4 个 AI 模型 (~1.14GB)
+├── install.bat / install.sh       # 一键安装脚本
+└── README.md                      # 部署教程
+```
 
-### 8.2 各后端性能对比
+**总大小：约 1.8 GB**
 
-| 检测后端 | 检测速度 | 人脸框精度 | 首次加载 | 推荐场景 |
-|----------|---------|-----------|---------|---------|
-| opencv | ~1-3 fps | 一般 | 即时 | 大批量预标注 |
-| mtcnn | ~0.5-1 fps | 良好 | ~2s | 日常标注 |
-| retinaface | ~0.1-0.3 fps | 最优 | ~5s | 精标/小批量 |
+### 9.2 部署流程
 
-### 8.3 分类模型精度
+```
+1. 拷贝 offline_package 到目标服务器
+2. pip install --no-index --find-links=packages -r requirements.txt
+3. 运行标注工具
+```
+
+无需联网，所有依赖和模型已内置。
+
+---
+
+## 10. 性能指标
+
+### 10.1 检测速度
+
+| 组件 | 速度 | 说明 |
+|------|------|------|
+| YOLOv8 人体检测 | ~1-2 fps | CPU 模式 |
+| DeepFace 人脸检测 (opencv) | ~1-3 fps | 最快 |
+| DeepFace 人脸检测 (retinaface) | ~0.1-0.3 fps | 精度最高 |
+
+### 10.2 分类精度
 
 | 任务 | 准确率 | 说明 |
 |------|--------|------|
-| 性别分类 | ~97.44% | 二分类，整体准确率高 |
-| 人种分类 | ~90% | 6 分类，部分类别容易混淆 |
+| 性别分类 | ~97.44% | 二分类 |
+| 人种分类 | ~90% | 6 分类，部分类别易混淆 |
 
 ---
 
-## 9. 已知限制
+## 11. 已知限制
 
-1. **人种分类准确率有限**：6 类人种分类本身难度较高，部分类别（如 White vs Middle Eastern）容易混淆
-2. **非正脸影响**：侧脸、低头、抬头等角度会影响检测和分类精度
-3. **遮挡问题**：口罩、墨镜等遮挡会降低分类准确率
-4. **动漫/CG 图片**：模型基于真人训练，对动漫、CG 角色不适用
-5. **小人脸**：图片中过小的人脸（<30px）会被过滤，无法分类
-6. **多人脸场景**：密集人群中的遮挡人脸可能漏检
+1. **人种分类准确率有限**：6 类人种分类本身难度较高
+2. **非正脸影响**：侧脸、低头等角度影响精度
+3. **遮挡问题**：口罩、墨镜降低准确率
+4. **动漫/CG 图片**：模型基于真人训练，不适用
+5. **小人脸**：<30px 的人脸被过滤
+6. **密集人群**：遮挡人脸可能漏检
 
 ---
 
-## 10. 依赖清单
+## 12. 依赖清单
 
 ```
 deepface>=0.0.93        # 人脸分析框架
 opencv-python>=4.8.0    # 图像处理
-tf-keras                # TensorFlow Keras（DeepFace 后端）
+tf-keras                # TensorFlow Keras
 numpy                   # 数组运算
-```
-
-可选依赖（用于特定检测后端）：
-```
-mediapipe               # mediapipe 后端
-ultralytics             # yolov8n 后端
-mtcnn                   # mtcnn 后端（DeepFace 自动安装）
+ultralytics             # YOLOv8 人体检测
+torch>=1.8.0            # PyTorch（ultralytics 依赖）
 ```
