@@ -129,6 +129,7 @@ def analyze_image(img, detector_backend, conf_threshold):
     if not demographies:
         return []
 
+    h_img, w_img = img.shape[:2]
     face_infos = []
     for r in demographies:
         # ── 人脸框 ──
@@ -140,6 +141,11 @@ def analyze_image(img, detector_backend, conf_threshold):
 
         # 过滤掉过小的人脸（宽或高 < 30 像素）
         if w < 30 or h < 30:
+            continue
+
+        # 过滤掉过大的"人脸"（覆盖图片 70% 以上 = 检测失败，返回了整张图）
+        if w > w_img * 0.7 and h > h_img * 0.7:
+            continue
             continue
 
         # ── 性别 ──
@@ -182,6 +188,47 @@ def analyze_image(img, detector_backend, conf_threshold):
                 k: round(float(v) / 100.0, 4) for k, v in race_scores.items()
             },
         })
+
+    # 如果 opencv 没检测到有效人脸，用 mtcnn 重试
+    if not face_infos and detector_backend == "opencv":
+        try:
+            demographies = DeepFace.analyze(
+                img_path=img,
+                actions=["gender", "race"],
+                detector_backend="mtcnn",
+                enforce_detection=False,
+                silent=True,
+            )
+            if demographies:
+                for r in demographies:
+                    region = r.get("region", {})
+                    x, y, w, h = region.get("x", 0), region.get("y", 0), region.get("w", 0), region.get("h", 0)
+                    if w < 30 or h < 30:
+                        continue
+                    if w > w_img * 0.7 and h > h_img * 0.7:
+                        continue
+                    gender_label = r.get("dominant_gender", "Unknown")
+                    gender_scores = r.get("gender", {})
+                    raw_gender_conf = max(gender_scores.values()) if gender_scores else 0.0
+                    gender_conf = float(raw_gender_conf) / 100.0
+                    gender_id = 2 if gender_conf < conf_threshold else GENDER_MAP.get(gender_label, 2)
+                    race_label = r.get("dominant_race", "Unknown")
+                    race_scores = r.get("race", {})
+                    raw_race_conf = max(race_scores.values()) if race_scores else 0.0
+                    race_conf = float(raw_race_conf) / 100.0
+                    race_id = 6 if race_conf < conf_threshold else RACE_MAP.get(race_label.lower(), 6)
+                    face_infos.append({
+                        "x1": x, "y1": y, "x2": x + w, "y2": y + h,
+                        "det_score": round(gender_conf, 4),
+                        "gender": gender_id, "gender_label": GENDER_LABELS[gender_id],
+                        "gender_conf": round(gender_conf, 4),
+                        "raw_gender_scores": {k: round(float(v) / 100.0, 4) for k, v in gender_scores.items()},
+                        "race": race_id, "race_label": RACE_LABELS[race_id],
+                        "race_conf": round(race_conf, 4),
+                        "raw_race_scores": {k: round(float(v) / 100.0, 4) for k, v in race_scores.items()},
+                    })
+        except Exception:
+            pass
 
     return face_infos
 
