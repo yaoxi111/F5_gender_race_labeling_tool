@@ -1,13 +1,13 @@
 """
 F5 性别与人种自动标注工具 v2 (deepface 版)
-人体检测 + 人脸检测 + 性别分类 + 人种分类: deepface + OpenCV HOG
+人体检测 + 人脸检测 + 性别分类 + 人种分类: deepface + YOLOv8
 输出与 F5 ODOT FaceInfo 结构对齐的 JSON 标注文件。
 
 用法:
-    python label_gender_race.py --input <图片文件夹> --output <输出JSON> [--conf <置信度阈值>] [--detector <检测后端>]
+    python label_gender_race.py -i <图片文件夹> -o <输出JSON> [-c 0.6] [-d retinaface] [-w 4] [--resize 1024]
 
 依赖:
-    pip install deepface opencv-python tf-keras
+    pip install deepface opencv-python tf-keras ultralytics
 """
 
 import argparse
@@ -25,6 +25,10 @@ import numpy as np
 # 指向本地 weights 目录，避免每次从 GitHub 下载
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["DEEPFACE_HOME"] = _SCRIPT_DIR
+
+# TensorFlow CPU 线程优化（默认 4 线程，可被 --workers 覆盖）
+os.environ.setdefault("TF_NUM_INTEROP_THREADS", "4")
+os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "4")
 
 # 修复 Windows GBK 编码
 os.environ["PYTHONIOENCODING"] = "utf-8"
@@ -250,6 +254,88 @@ def draw_results(img, face_infos, person_infos):
     return vis
 
 
+# ─────────── 图片缩放 ───────────
+
+def resize_image(img, max_side):
+    """
+    将图片等比缩放，使长边不超过 max_side 像素。
+    返回 (缩放后的图片, 缩放比例)。
+    """
+    h, w = img.shape[:2]
+    if max(h, w) <= max_side:
+        return img, 1.0
+    scale = max_side / max(h, w)
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+    resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+    return resized, scale
+
+
+def scale_boxes(boxes, scale):
+    """将框坐标按比例还原到原图尺寸。"""
+    if scale == 1.0:
+        return boxes
+    result = []
+    for box in boxes:
+        if isinstance(box, dict):
+            b = dict(box)
+            b["x1"] = int(b["x1"] / scale)
+            b["y1"] = int(b["y1"] / scale)
+            b["x2"] = int(b["x2"] / scale)
+            b["y2"] = int(b["y2"] / scale)
+            result.append(b)
+        elif isinstance(box, (list, tuple)):
+            result.append(tuple(int(v / scale) for v in box))
+        else:
+            result.append(box)
+    return result
+
+
+# ─────────── 单图处理（可被多进程调用）────────────
+
+def _process_single_image(args):
+    """
+    处理单张图片，返回 (rel_path, abs_path, person_infos, face_infos, error_msg)。
+    用于多进程模式。
+    """
+    img_path, input_dir, detector_backend, conf_threshold, max_resize = args
+    rel_path = os.path.relpath(img_path, input_dir)
+
+    try:
+        raw = np.fromfile(img_path, dtype=np.uint8)
+        img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
+        if img is None:
+            return (rel_path, os.path.abspath(img_path), [], [], "无法读取")
+
+        # 图片缩放
+        scale = 1.0
+        if max_resize and max_resize > 0:
+            img, scale = resize_image(img, max_resize)
+
+        # 人体检测
+        persons = detect_persons(img)
+        person_infos = []
+        for (px1, py1, px2, py2, pscore) in persons:
+            person_infos.append({
+                "x1": px1, "y1": py1, "x2": px2, "y2": py2,
+                "label": "person", "det_score": round(pscore, 4),
+            })
+
+        # 人脸检测 + 分类
+        face_infos = analyze_image(img, detector_backend, conf_threshold)
+
+        # 还原到原图坐标
+        if scale != 1.0:
+            person_infos = scale_boxes(person_infos, scale)
+            face_infos = scale_boxes(face_infos, scale)
+
+        del img, raw
+        return (rel_path, os.path.abspath(img_path), person_infos, face_infos, None)
+
+    except Exception as e:
+        return (rel_path, os.path.abspath(img_path), [], [], str(e))
+
+
 # ─────────── 主流程 ───────────
 
 def collect_images(input_dir, skip_dirs=None):
@@ -265,16 +351,48 @@ def collect_images(input_dir, skip_dirs=None):
     return images
 
 
-def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_dir=None):
-    skip = {"viz"} if viz_dir else None
+def _update_stats(stats, person_infos, face_infos):
+    """更新统计信息。"""
+    stats["total_images"] += 1
+    stats["total_persons"] += len(person_infos)
+    stats["total_faces"] += len(face_infos)
+    if not person_infos:
+        stats["no_person"] += 1
+    if not face_infos:
+        stats["no_face"] += 1
+    for f in face_infos:
+        g = f["gender"]
+        if g == 0: stats["female"] += 1
+        elif g == 1: stats["male"] += 1
+        else: stats["unknown_gender"] += 1
+        rid = f["race"]
+        if rid == 0: stats["asian"] += 1
+        elif rid == 1: stats["white"] += 1
+        elif rid == 2: stats["middle_eastern"] += 1
+        elif rid == 3: stats["indian"] += 1
+        elif rid == 4: stats["latino"] += 1
+        elif rid == 5: stats["black"] += 1
+        else: stats["unknown_race"] += 1
+
+
+def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
+                 viz_dir=None, workers=1, max_resize=0):
+    skip = {"viz"}
     images = collect_images(input_dir, skip_dirs=skip)
     if not images:
         print(f"[ERROR] 未找到图片: {input_dir}")
         sys.exit(1)
 
+    # 自动检测 CPU 核心数
+    if workers == -1:
+        workers = os.cpu_count() or 4
+
     print(f"[INFO] 共找到 {len(images)} 张图片")
     print(f"[INFO] 置信度阈值: {conf_threshold}")
     print(f"[INFO] 检测后端: {detector_backend}")
+    print(f"[INFO] 并行进程数: {workers}")
+    if max_resize > 0:
+        print(f"[INFO] 图片缩放: 长边不超过 {max_resize}px")
     print(f"[INFO] 输出文件: {output_path}")
     if viz_dir:
         os.makedirs(viz_dir, exist_ok=True)
@@ -292,96 +410,148 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend, viz_d
     start_time = time.time()
     total = len(images)
 
-    for i, img_path in enumerate(images):
-        rel_path = os.path.relpath(img_path, input_dir)
-        print(f"[{i + 1}/{total}] {rel_path}", end=" ... ", flush=True)
+    if workers > 1:
+        # ── 多进程模式 ──
+        import multiprocessing as mp
 
-        try:
-            raw = np.fromfile(img_path, dtype=np.uint8)
-            img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
-            if img is None:
-                print("无法读取，跳过")
+        task_args = [
+            (img_path, input_dir, detector_backend, conf_threshold, max_resize)
+            for img_path in images
+        ]
+
+        print(f"[INFO] 启动 {workers} 个进程并行处理...")
+        with mp.Pool(processes=workers) as pool:
+            for i, (rel_path, abs_path, person_infos, face_infos, error) in enumerate(
+                pool.imap_unordered(_process_single_image, task_args)
+            ):
+                if error:
+                    print(f"[{i + 1}/{total}] {rel_path} ... 错误: {error}")
+                    stats["errors"] += 1
+                else:
+                    all_labels.append({
+                        "image_path": rel_path,
+                        "image_abs_path": abs_path,
+                        "person_count": len(person_infos),
+                        "persons": person_infos,
+                        "face_count": len(face_infos),
+                        "faces": face_infos,
+                    })
+                    _update_stats(stats, person_infos, face_infos)
+
+                    parts = []
+                    if person_infos:
+                        parts.append(f"{len(person_infos)}个人体")
+                    if face_infos:
+                        parts.append(f"{len(face_infos)}张人脸")
+                    if not parts:
+                        parts.append("未检测到")
+                    print(f"[{i + 1}/{total}] {rel_path} ... {', '.join(parts)}")
+
+                # 定期保存检查点
+                if (i + 1) % 100 == 0:
+                    print(f"  [CHECKPOINT] 已处理 {i + 1}/{total}")
+
+        # 多进程模式下单独保存可视化
+        if viz_dir:
+            print("[INFO] 生成可视化图片...")
+            for label in all_labels:
+                try:
+                    img_path = label["image_abs_path"]
+                    raw = np.fromfile(img_path, dtype=np.uint8)
+                    img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
+                    if img is not None:
+                        vis_img = draw_results(img, label["faces"], label["persons"])
+                        vis_path = os.path.join(viz_dir, os.path.basename(img_path))
+                        _, ext = os.path.splitext(vis_path)
+                        cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
+                        del vis_img, img, raw
+                except Exception:
+                    pass
+
+    else:
+        # ── 单进程模式（原始流程）──
+        for i, img_path in enumerate(images):
+            rel_path = os.path.relpath(img_path, input_dir)
+            print(f"[{i + 1}/{total}] {rel_path}", end=" ... ", flush=True)
+
+            try:
+                raw = np.fromfile(img_path, dtype=np.uint8)
+                img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
+                if img is None:
+                    print("无法读取，跳过")
+                    stats["errors"] += 1
+                    continue
+
+                # 图片缩放
+                scale = 1.0
+                if max_resize > 0:
+                    img, scale = resize_image(img, max_resize)
+
+                # 人体检测
+                persons = detect_persons(img)
+                person_infos = []
+                for (px1, py1, px2, py2, pscore) in persons:
+                    person_infos.append({
+                        "x1": px1, "y1": py1, "x2": px2, "y2": py2,
+                        "label": "person", "det_score": round(pscore, 4),
+                    })
+
+                # 人脸检测 + 分类
+                face_infos = analyze_image(img, detector_backend, conf_threshold)
+
+                # 还原到原图坐标
+                if scale != 1.0:
+                    person_infos = scale_boxes(person_infos, scale)
+                    face_infos = scale_boxes(face_infos, scale)
+
+                # 绘制可视化（在原图上绘制）
+                if viz_dir and (face_infos or person_infos):
+                    try:
+                        # 重新读取原图用于可视化
+                        raw_orig = np.fromfile(img_path, dtype=np.uint8)
+                        img_orig = cv2.imdecode(raw_orig, cv2.IMREAD_COLOR)
+                        if img_orig is not None:
+                            vis_img = draw_results(img_orig, face_infos, person_infos)
+                            vis_path = os.path.join(viz_dir, os.path.basename(img_path))
+                            _, ext = os.path.splitext(vis_path)
+                            cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
+                            del vis_img, img_orig, raw_orig
+                    except Exception as ve:
+                        print(f"[WARN] 可视化保存失败: {ve}", end=" ")
+
+                del img, raw
+
+                all_labels.append({
+                    "image_path": rel_path,
+                    "image_abs_path": os.path.abspath(img_path),
+                    "person_count": len(person_infos),
+                    "persons": person_infos,
+                    "face_count": len(face_infos),
+                    "faces": face_infos,
+                })
+
+                _update_stats(stats, person_infos, face_infos)
+
+                parts = []
+                if person_infos:
+                    parts.append(f"{len(person_infos)}个人体")
+                if face_infos:
+                    face_summary = [f"{f['gender_label']}/{f['race_label']}" for f in face_infos]
+                    parts.append(f"{len(face_infos)}张人脸 -> {face_summary}")
+                if not parts:
+                    parts.append("未检测到")
+                print(", ".join(parts))
+
+            except KeyboardInterrupt:
+                print("\n[WARN] 用户中断，保存已处理结果...")
+                break
+            except Exception as e:
+                print(f"处理异常: {e}")
                 stats["errors"] += 1
                 continue
 
-            # 人体检测
-            persons = detect_persons(img)
-            person_infos = []
-            for (px1, py1, px2, py2, pscore) in persons:
-                person_infos.append({
-                    "x1": px1, "y1": py1, "x2": px2, "y2": py2,
-                    "label": "person",
-                    "det_score": round(pscore, 4),
-                })
-
-            # 人脸检测 + 分类
-            face_infos = analyze_image(img, detector_backend, conf_threshold)
-
-            # 绘制可视化并保存
-            if viz_dir and (face_infos or person_infos):
-                try:
-                    vis_img = draw_results(img, face_infos, person_infos)
-                    vis_path = os.path.join(viz_dir, os.path.basename(img_path))
-                    _, ext = os.path.splitext(vis_path)
-                    cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
-                    del vis_img
-                except Exception as ve:
-                    print(f"[WARN] 可视化保存失败: {ve}", end=" ")
-
-            del img, raw
-
-            all_labels.append({
-                "image_path": rel_path,
-                "image_abs_path": os.path.abspath(img_path),
-                "person_count": len(person_infos),
-                "persons": person_infos,
-                "face_count": len(face_infos),
-                "faces": face_infos,
-            })
-
-            stats["total_images"] += 1
-            stats["total_persons"] += len(person_infos)
-            stats["total_faces"] += len(face_infos)
-            if not person_infos:
-                stats["no_person"] += 1
-            if not face_infos:
-                stats["no_face"] += 1
-
-            for f in face_infos:
-                g = f["gender"]
-                if g == 0: stats["female"] += 1
-                elif g == 1: stats["male"] += 1
-                else: stats["unknown_gender"] += 1
-                rid = f["race"]
-                if rid == 0: stats["asian"] += 1
-                elif rid == 1: stats["white"] += 1
-                elif rid == 2: stats["middle_eastern"] += 1
-                elif rid == 3: stats["indian"] += 1
-                elif rid == 4: stats["latino"] += 1
-                elif rid == 5: stats["black"] += 1
-                else: stats["unknown_race"] += 1
-
-            parts = []
-            if person_infos:
-                parts.append(f"{len(person_infos)}个人体")
-            if face_infos:
-                face_summary = [f"{f['gender_label']}/{f['race_label']}" for f in face_infos]
-                parts.append(f"{len(face_infos)}张人脸 -> {face_summary}")
-            if not parts:
-                parts.append("未检测到")
-            print(", ".join(parts))
-
-        except KeyboardInterrupt:
-            print("\n[WARN] 用户中断，保存已处理结果...")
-            break
-        except Exception as e:
-            print(f"处理异常: {e}")
-            stats["errors"] += 1
-            continue
-
-        # 每 50 张清理内存
-        if (i + 1) % 50 == 0:
-            gc.collect()
+            if (i + 1) % 50 == 0:
+                gc.collect()
 
     elapsed = time.time() - start_time
 
@@ -443,13 +613,18 @@ def main():
                         help="人脸检测后端 (默认: opencv)")
     parser.add_argument("--viz-dir", "-v", default=None,
                         help="可视化输出目录 (将保存带人体框+人脸框标注的图片)")
+    parser.add_argument("--workers", "-w", type=int, default=1,
+                        help="并行进程数 (默认: 1, -1=自动使用所有CPU核心)")
+    parser.add_argument("--resize", type=int, default=0,
+                        help="图片缩放: 长边最大像素数 (默认: 0=不缩放, 推荐: 1024)")
     args = parser.parse_args()
 
     if not os.path.isdir(args.input):
         print(f"[ERROR] 输入路径不存在或不是目录: {args.input}")
         sys.exit(1)
 
-    run_labeling(args.input, args.output, args.conf, args.detector, args.viz_dir)
+    run_labeling(args.input, args.output, args.conf, args.detector,
+                 args.viz_dir, args.workers, args.resize)
 
 
 if __name__ == "__main__":
