@@ -61,6 +61,8 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 | `--conf` | `-c` | float | 否 | 置信度阈值（低于此值标记为 Unknown） | `0.6` |
 | `--detector` | `-d` | string | 否 | 人脸检测后端（推荐 `retinaface`） | `opencv` |
 | `--viz-dir` | `-v` | string | 否 | 可视化输出目录（保存带框标注的图片） | — |
+| `--workers` | `-w` | int | 否 | 并行进程数（-1=自动使用所有 CPU 核心） | `1` |
+| `--resize` | — | int | 否 | 图片缩放：长边最大像素数（0=不缩放） | `0` |
 
 ### 2.3 支持的图片格式
 
@@ -119,7 +121,51 @@ python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d retinafa
 
 ---
 
-## 5. 置信度阈值说明
+## 5. 加速方案（10000+ 张图片）
+
+### 5.1 时间估算（CPU 无 GPU）
+
+| 后端 | 速度 | 10000 张耗时 | 说明 |
+|------|------|-------------|------|
+| `retinaface` | ~0.1 fps | ~28 小时 | 精度最高 |
+| `mtcnn` | ~0.7 fps | ~4 小时 | 平衡 |
+| `opencv` | ~2 fps | ~1.5 小时 | 最快 |
+
+### 5.2 加速参数
+
+**多进程并行**（`--workers`）：
+```bash
+# 使用 4 个进程并行处理（预计加速 2-3 倍）
+python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4
+
+# 自动使用所有 CPU 核心
+python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w -1
+```
+
+**图片缩放**（`--resize`）：
+```bash
+# 将大图缩放到长边 1024px 再处理（大幅减少像素量，加速 2-4 倍）
+python label_gender_race.py -i /data/images -o /data/labels.json -d opencv --resize 1024
+```
+
+**组合使用**（最大加速）：
+```bash
+# 4 进程 + 缩放 + opencv 后端 → 10000 张预计 20-30 分钟
+python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 --resize 1024
+```
+
+### 5.3 加速效果预估
+
+| 配置 | 10000 张耗时 | 说明 |
+|------|-------------|------|
+| 单进程 + retinaface | ~28 小时 | 默认配置 |
+| 单进程 + opencv | ~1.5 小时 | 换后端 |
+| 4 进程 + opencv | ~30 分钟 | 多进程 |
+| 4 进程 + opencv + resize 1024 | ~15 分钟 | 最大加速 |
+
+---
+
+## 6. 置信度阈值说明
 
 | 阈值 | 效果 | 适用场景 |
 |------|------|----------|
@@ -130,7 +176,7 @@ python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d retinafa
 
 ---
 
-## 6. 输出格式
+## 7. 输出格式
 
 ### 6.1 JSON 整体结构
 
@@ -212,7 +258,7 @@ python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d retinafa
 
 ---
 
-## 7. 大规模数据集保护
+## 8. 大规模数据集保护
 
 v2 包含以下保护机制：
 
@@ -224,7 +270,7 @@ v2 包含以下保护机制：
 
 ---
 
-## 8. 常见问题
+## 9. 常见问题
 
 ### Q: 某张图片标注为 Unknown？
 
@@ -250,7 +296,7 @@ v2 包含以下保护机制：
 
 ---
 
-## 9. 模型性能参考
+## 10. 模型性能参考
 
 | 指标 | 数值 |
 |------|------|
@@ -261,7 +307,7 @@ v2 包含以下保护机制：
 
 ---
 
-## 10. 离线部署
+## 11. 离线部署
 
 需要在无网络的服务器上使用？请参见 `offline_package/` 目录：
 
