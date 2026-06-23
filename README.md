@@ -58,8 +58,10 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 |------|------|------|------|------|--------|
 | `--input` | `-i` | string | **是** | 输入图片文件夹路径 | — |
 | `--output` | `-o` | string | 否 | 输出 JSON 文件路径 | `./output/gender_race_labels.json` |
-| `--conf` | `-c` | float | 否 | 置信度阈值（低于此值标记为 Unknown） | `0.6` |
-| `--detector` | `-d` | string | 否 | 人脸检测后端（推荐 `retinaface`） | `opencv` |
+| `--conf` | `-c` | float | 否 | 性别置信度阈值（低于此值标记为 Unknown） | `0.6` |
+| `--race-conf` | — | float | 否 | 人种置信度阈值（人种模型置信度天然较低，建议 0.3） | `0.3` |
+| `--race-argmax` | — | flag | 否 | 人种分类使用 argmax 模式（直接取最高分，完全消除 Unknown） | 关闭 |
+| `--detector` | `-d` | string | 否 | 人脸检测后端 | `retinaface` |
 | `--viz-dir` | `-v` | string | 否 | 可视化输出目录（保存带框标注的图片） | — |
 | `--workers` | `-w` | int | 否 | 并行进程数（-1=自动使用所有 CPU 核心） | `1` |
 | `--resize` | — | int | 否 | 图片缩放：长边最大像素数（0=不缩放） | `0` |
@@ -74,10 +76,10 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 
 ## 3. 使用示例
 
-### 示例 1：推荐用法（retinaface + 可视化）
+### 示例 1：推荐用法（retinaface + 人种独立阈值）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json -v D:\data\viz -d retinaface
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json -v D:\data\viz
 ```
 
 ### 示例 2：大批量快速标注（opencv 最快）
@@ -86,10 +88,16 @@ python label_gender_race.py -i D:\data\images -o D:\data\labels.json -v D:\data\
 python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d opencv -c 0.5
 ```
 
-### 示例 3：高精度精标（严格阈值）
+### 示例 3：完全消除人种 Unknown（argmax 模式）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d retinaface -c 0.8
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json --race-argmax
+```
+
+### 示例 4：高精度精标（严格阈值）
+
+```bash
+python label_gender_race.py -i D:\data\images -o D:\data\labels.json -c 0.8 --race-conf 0.5
 ```
 
 ### 可视化颜色说明
@@ -167,12 +175,24 @@ python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 
 
 ## 6. 置信度阈值说明
 
+### 6.1 性别阈值（`--conf`）
+
 | 阈值 | 效果 | 适用场景 |
 |------|------|----------|
 | `0.5` | 宽松，大部分直接标注 | 数据量少，希望尽量多标注 |
 | `0.6` | **默认推荐**，平衡精度和召回 | 通用场景 |
 | `0.8` | 严格，只保留高置信度 | 对标注质量要求高 |
 | `0.9` | 非常严格 | 只要几乎确定的结果 |
+
+### 6.2 人种阈值（`--race-conf` / `--race-argmax`）
+
+人种模型有 6 个类别，softmax 输出天然分散，置信度普遍低于性别模型。
+
+| 模式 | 参数 | 效果 | 适用场景 |
+|------|------|------|----------|
+| 低阈值 | `--race-conf 0.3` | **默认**，仅过滤极低置信度 | 通用场景 |
+| 中阈值 | `--race-conf 0.5` | 中等严格 | 对人种标注有一定质量要求 |
+| argmax | `--race-argmax` | 直接取最高分，完全消除 Unknown | 需要每张脸都有人种标签 |
 
 ---
 
@@ -197,6 +217,7 @@ python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 
   "person_detector": "yolov8n",
   "face_detector_backend": "retinaface",
   "conf_threshold": 0.6,
+  "race_conf_threshold": 0.3,
   "total_images": 34,
   "total_persons": 35,
   "total_faces": 35,
@@ -205,6 +226,8 @@ python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 
   "fps": 0.23
 }
 ```
+
+> 注：`race_conf_threshold` 显示为 `"argmax"` 表示使用了 argmax 模式。
 
 ### 6.3 labels（逐图标注）
 
@@ -275,6 +298,7 @@ v2 包含以下保护机制：
 ### Q: 某张图片标注为 Unknown？
 
 置信度低于阈值。可降低阈值 `--conf 0.5` 或换用 `--detector retinaface`。
+人种 Unknown 还可使用 `--race-argmax` 完全消除。
 
 ### Q: 检测到多个人体/人脸？
 
@@ -282,7 +306,10 @@ v2 包含以下保护机制：
 
 ### Q: 人种置信度普遍偏低？
 
-正常现象。建议对人种使用较低阈值，关注 `raw_race_scores` 概率分布。
+正常现象。人种模型有 6 个类别，softmax 输出天然分散。解决方案：
+1. **降低人种阈值**：`--race-conf 0.3`（默认已是 0.3）
+2. **argmax 模式**：`--race-argmax` 直接取最高分，完全消除 Unknown
+3. **查看原始分布**：关注 `raw_race_scores` 字段了解模型的完整判断
 
 ### Q: 支持中文路径吗？
 

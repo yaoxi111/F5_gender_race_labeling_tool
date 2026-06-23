@@ -4,7 +4,7 @@ F5 性别与人种自动标注工具 v2 (deepface 版)
 输出与 F5 ODOT FaceInfo 结构对齐的 JSON 标注文件。
 
 用法:
-    python label_gender_race.py -i <图片文件夹> -o <输出JSON> [-c 0.6] [-d retinaface] [-w 4] [--resize 1024]
+    python label_gender_race.py -i <图片文件夹> -o <输出JSON> [-c 0.6] [--race-conf 0.3] [-d retinaface] [-w 4] [--resize 1024]
 
 依赖:
     pip install deepface opencv-python tf-keras ultralytics
@@ -107,12 +107,151 @@ def detect_persons(img, conf_threshold=0.5):
 
 # ─────────── 核心分析 ───────────
 
-def analyze_image(img, detector_backend, conf_threshold):
+def _classify_race(race_scores, race_conf_threshold, race_argmax):
+    """
+    根据人种分数进行分类。
+    race_argmax=True 时直接取最高分；否则使用独立阈值。
+    返回 (race_id, race_conf)。
+    """
+    if not race_scores:
+        return 6, 0.0
+
+    # 找到最高分的类别
+    max_label = max(race_scores, key=race_scores.get)
+    max_score = float(race_scores[max_label]) / 100.0
+
+    if race_argmax:
+        # argmax 模式：直接取最高分，不设阈值
+        return RACE_MAP.get(max_label.lower(), 6), max_score
+
+    # 阈值模式：使用人种独立阈值
+    if max_score < race_conf_threshold:
+        return 6, max_score  # Unknown
+    return RACE_MAP.get(max_label.lower(), 6), max_score
+
+
+def _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_img, h_img):
+    """
+    从 DeepFace 结果中提取单张人脸信息。
+    返回 dict 或 None（被过滤时）。
+    """
+    region = r.get("region", {})
+    x = region.get("x", 0)
+    y = region.get("y", 0)
+    w = region.get("w", 0)
+    h = region.get("h", 0)
+
+    # 过滤掉过小的人脸（宽或高 < 30 像素）
+    if w < 30 or h < 30:
+        return None
+
+    # 过滤掉过大的"人脸"（覆盖图片 70% 以上 = 检测失败，返回了整张图）
+    if w > w_img * 0.7 and h > h_img * 0.7:
+        return None
+
+    # ── 性别 ──
+    gender_label = r.get("dominant_gender", "Unknown")
+    gender_scores = r.get("gender", {})
+    raw_gender_conf = max(gender_scores.values()) if gender_scores else 0.0
+    gender_conf = float(raw_gender_conf) / 100.0
+
+    if gender_conf < conf_threshold:
+        gender_id = 2  # Unknown
+    else:
+        gender_id = GENDER_MAP.get(gender_label, 2)
+
+    # ── 人种（使用独立阈值或 argmax）──
+    race_scores = r.get("race", {})
+    race_id, race_conf = _classify_race(race_scores, race_conf_threshold, race_argmax)
+
+    return {
+        "x1": x, "y1": y, "x2": x + w, "y2": y + h,
+        "det_score": round(gender_conf, 4),
+        # 性别
+        "gender": gender_id,
+        "gender_label": GENDER_LABELS[gender_id],
+        "gender_conf": round(gender_conf, 4),
+        "raw_gender_scores": {
+            k: round(float(v) / 100.0, 4) for k, v in gender_scores.items()
+        },
+        # 人种
+        "race": race_id,
+        "race_label": RACE_LABELS[race_id],
+        "race_conf": round(race_conf, 4),
+        "raw_race_scores": {
+            k: round(float(v) / 100.0, 4) for k, v in race_scores.items()
+        },
+    }
+
+
+def _try_deepface(img, detector_backend, enforce=False):
+    """调用 DeepFace.analyze，返回结果列表或空列表。"""
+    from deepface import DeepFace
+    try:
+        return DeepFace.analyze(
+            img_path=img,
+            actions=["gender", "race"],
+            detector_backend=detector_backend,
+            enforce_detection=enforce,
+            silent=True,
+        )
+    except Exception:
+        return []
+
+
+def analyze_image(img, detector_backend, conf_threshold,
+                  race_conf_threshold=0.3, race_argmax=False):
     """
     对单张图片做人脸检测 + 性别分类 + 人种分类。
     使用 DeepFace.analyze() 一步完成检测 + 分类，确保分类精度。
+    支持多尺度检测 fallback：原图 → 放大 1.5x → retinaface。
     返回 FaceInfo 列表。
     """
+    h_img, w_img = img.shape[:2]
+
+    # ── 第 1 轮：原图检测 ──
+    demographies = _try_deepface(img, detector_backend)
+    face_infos = []
+    for r in demographies:
+        info = _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_img, h_img)
+        if info is not None:
+            face_infos.append(info)
+
+    # ── 第 2 轮：如果原图无有效人脸，尝试放大 1.5x 重试 ──
+    if not face_infos:
+        scale_up = 1.5
+        img_up = cv2.resize(img, None, fx=scale_up, fy=scale_up, interpolation=cv2.INTER_CUBIC)
+        h_up, w_up = img_up.shape[:2]
+        demographies = _try_deepface(img_up, detector_backend)
+        for r in demographies:
+            info = _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_up, h_up)
+            if info is not None:
+                # 还原坐标到原图
+                info["x1"] = int(info["x1"] / scale_up)
+                info["y1"] = int(info["y1"] / scale_up)
+                info["x2"] = int(info["x2"] / scale_up)
+                info["y2"] = int(info["y2"] / scale_up)
+                face_infos.append(info)
+        del img_up
+
+    # ── 第 3 轮：如果仍无结果且不是 retinaface，用 retinaface 最终尝试 ──
+    if not face_infos and detector_backend != "retinaface":
+        demographies = _try_deepface(img, "retinaface")
+        for r in demographies:
+            info = _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, h_img, w_img)
+            if info is not None:
+                face_infos.append(info)
+
+    # ── 第 4 轮：如果 opencv 失败且不是 mtcnn，用 mtcnn 重试 ──
+    # （保留原有逻辑，但移到多尺度检测之后）
+    if not face_infos and detector_backend == "opencv":
+        demographies = _try_deepface(img, "mtcnn")
+        for r in demographies:
+            info = _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, h_img, w_img)
+            if info is not None:
+                face_infos.append(info)
+
+    return face_infos
     from deepface import DeepFace
 
     try:
@@ -145,7 +284,6 @@ def analyze_image(img, detector_backend, conf_threshold):
 
         # 过滤掉过大的"人脸"（覆盖图片 70% 以上 = 检测失败，返回了整张图）
         if w > w_img * 0.7 and h > h_img * 0.7:
-            continue
             continue
 
         # ── 性别 ──
@@ -345,7 +483,7 @@ def _process_single_image(args):
     处理单张图片，返回 (rel_path, abs_path, person_infos, face_infos, error_msg)。
     用于多进程模式。
     """
-    img_path, input_dir, detector_backend, conf_threshold, max_resize = args
+    img_path, input_dir, detector_backend, conf_threshold, max_resize, race_conf_threshold, race_argmax = args
     rel_path = os.path.relpath(img_path, input_dir)
 
     try:
@@ -369,7 +507,8 @@ def _process_single_image(args):
             })
 
         # 人脸检测 + 分类
-        face_infos = analyze_image(img, detector_backend, conf_threshold)
+        face_infos = analyze_image(img, detector_backend, conf_threshold,
+                                   race_conf_threshold, race_argmax)
 
         # 还原到原图坐标
         if scale != 1.0:
@@ -423,7 +562,8 @@ def _update_stats(stats, person_infos, face_infos):
 
 
 def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
-                 viz_dir=None, workers=1, max_resize=0):
+                 viz_dir=None, workers=1, max_resize=0,
+                 race_conf_threshold=0.3, race_argmax=False):
     skip = {"viz"}
     images = collect_images(input_dir, skip_dirs=skip)
     if not images:
@@ -435,7 +575,11 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
         workers = os.cpu_count() or 4
 
     print(f"[INFO] 共找到 {len(images)} 张图片")
-    print(f"[INFO] 置信度阈值: {conf_threshold}")
+    print(f"[INFO] 性别置信度阈值: {conf_threshold}")
+    if race_argmax:
+        print(f"[INFO] 人种分类: argmax 模式（直接取最高分）")
+    else:
+        print(f"[INFO] 人种置信度阈值: {race_conf_threshold}")
     print(f"[INFO] 检测后端: {detector_backend}")
     print(f"[INFO] 并行进程数: {workers}")
     if max_resize > 0:
@@ -462,7 +606,8 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
         import multiprocessing as mp
 
         task_args = [
-            (img_path, input_dir, detector_backend, conf_threshold, max_resize)
+            (img_path, input_dir, detector_backend, conf_threshold, max_resize,
+             race_conf_threshold, race_argmax)
             for img_path in images
         ]
 
@@ -544,7 +689,8 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
                     })
 
                 # 人脸检测 + 分类
-                face_infos = analyze_image(img, detector_backend, conf_threshold)
+                face_infos = analyze_image(img, detector_backend, conf_threshold,
+                                           race_conf_threshold, race_argmax)
 
                 # 还原到原图坐标
                 if scale != 1.0:
@@ -609,6 +755,7 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
             "person_detector": "yolov8n",
             "face_detector_backend": detector_backend,
             "conf_threshold": conf_threshold,
+            "race_conf_threshold": race_conf_threshold if not race_argmax else "argmax",
             "total_images": stats["total_images"],
             "total_persons": stats["total_persons"],
             "total_faces": stats["total_faces"],
@@ -654,10 +801,12 @@ def main():
     parser = argparse.ArgumentParser(description="F5 性别与人种自动标注工具 v2 (deepface + 人体检测)")
     parser.add_argument("--input", "-i", required=True, help="输入图片文件夹路径")
     parser.add_argument("--output", "-o", default="./output/gender_race_labels.json", help="输出 JSON 文件路径")
-    parser.add_argument("--conf", "-c", type=float, default=0.6, help="置信度阈值 (默认: 0.6)")
-    parser.add_argument("--detector", "-d", default="opencv",
+    parser.add_argument("--conf", "-c", type=float, default=0.6, help="性别置信度阈值 (默认: 0.6)")
+    parser.add_argument("--race-conf", type=float, default=0.3, help="人种置信度阈值 (默认: 0.3, 人种模型置信度天然较低)")
+    parser.add_argument("--race-argmax", action="store_true", help="人种分类使用 argmax 模式（直接取最高分，完全消除 Unknown）")
+    parser.add_argument("--detector", "-d", default="retinaface",
                         choices=["opencv", "mtcnn", "retinaface", "mediapipe", "ssd", "yolov8n", "fastmtcnn"],
-                        help="人脸检测后端 (默认: opencv)")
+                        help="人脸检测后端 (默认: retinaface)")
     parser.add_argument("--viz-dir", "-v", default=None,
                         help="可视化输出目录 (将保存带人体框+人脸框标注的图片)")
     parser.add_argument("--workers", "-w", type=int, default=1,
@@ -671,7 +820,8 @@ def main():
         sys.exit(1)
 
     run_labeling(args.input, args.output, args.conf, args.detector,
-                 args.viz_dir, args.workers, args.resize)
+                 args.viz_dir, args.workers, args.resize,
+                 args.race_conf, args.race_argmax)
 
 
 if __name__ == "__main__":
