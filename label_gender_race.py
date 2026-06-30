@@ -26,6 +26,9 @@ import numpy as np
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["DEEPFACE_HOME"] = _SCRIPT_DIR
 
+# 解决 DeepFace 与 Keras 3.x 的兼容性问题
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
 # TensorFlow CPU 线程优化（默认 4 线程，可被 --workers 覆盖）
 os.environ.setdefault("TF_NUM_INTEROP_THREADS", "4")
 os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "4")
