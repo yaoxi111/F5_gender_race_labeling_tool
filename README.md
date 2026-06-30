@@ -1,6 +1,6 @@
-# F5 性别与人种自动标注工具 v2
+# F5 性别与人种自动标注工具 v3
 
-基于 [DeepFace](https://github.com/serengil/deepface) + [YOLOv8](https://github.com/ultralytics/ultralytics) 的 **人体检测 + 人脸检测 + 性别分类 + 人种分类** 自动标注工具，输出与 F5 ODOT `FaceInfo` 结构对齐的 JSON 标注文件。
+基于 [DeepFace](https://github.com/serengil/deepface) + [YOLOv8](https://github.com/ultralytics/ultralytics) 的 **人体检测 + 人脸检测 + 性别分类 + 人种分类** 自动标注工具。**v3 每张图输出一个独立 JSON 文件**，格式与 F5 MTL 训练管线对齐。支持自动检测并调用本地 GPU。
 
 ---
 
@@ -49,7 +49,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
 ### 2.1 命令格式
 
 ```bash
-python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选项]
+python label_gender_race.py --input <图片文件夹> --output <输出目录> [选项]
 ```
 
 ### 2.2 参数说明
@@ -57,8 +57,8 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 | 参数 | 缩写 | 类型 | 必填 | 说明 | 默认值 |
 |------|------|------|------|------|--------|
 | `--input` | `-i` | string | **是** | 输入图片文件夹路径 | — |
-| `--output` | `-o` | string | 否 | 输出 JSON 文件路径 | `./output/gender_race_labels.json` |
-| `--conf` | `-c` | float | 否 | 性别置信度阈值（低于此值标记为 Unknown） | `0.6` |
+| `--output` | `-o` | string | 否 | 输出目录路径（每张图一个JSON） | `./output_labels` |
+| `--conf` | `-c` | float | 否 | 性别置信度阈值（低于阈值归为 male_or_gender_unknown） | `0.6` |
 | `--race-conf` | — | float | 否 | 人种置信度阈值（人种模型置信度天然较低，建议 0.3） | `0.3` |
 | `--race-argmax` | — | flag | 否 | 人种分类使用 argmax 模式（直接取最高分，完全消除 Unknown） | 关闭 |
 | `--detector` | `-d` | string | 否 | 人脸检测后端 | `retinaface` |
@@ -76,37 +76,36 @@ python label_gender_race.py --input <图片文件夹> --output <输出JSON> [选
 
 ## 3. 使用示例
 
-### 示例 1：推荐用法（retinaface + 人种独立阈值）
+### 示例 1：推荐用法（retinaface + 输出目录）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json -v D:\data\viz
+python label_gender_race.py -i D:\data\images -o D:\data\labels -v D:\data\viz
 ```
 
 ### 示例 2：大批量快速标注（opencv 最快）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json -d opencv -c 0.5
+python label_gender_race.py -i D:\data\images -o D:\data\labels -d opencv -c 0.5
 ```
 
 ### 示例 3：完全消除人种 Unknown（argmax 模式）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json --race-argmax
+python label_gender_race.py -i D:\data\images -o D:\data\labels --race-argmax
 ```
 
 ### 示例 4：高精度精标（严格阈值）
 
 ```bash
-python label_gender_race.py -i D:\data\images -o D:\data\labels.json -c 0.8 --race-conf 0.5
+python label_gender_race.py -i D:\data\images -o D:\data\labels -c 0.8 --race-conf 0.5
 ```
 
 ### 可视化颜色说明
 
 - **绿色框** = 人体（person）
-- **蓝色框** = 男性人脸
-- **红色框** = 女性人脸
-- **紫色框** = 未知性别人脸
-- 标签格式：`性别/人种` + `置信度%`
+- **蓝色框** = male_or_gender_unknown
+- **红色框** = female
+- 标签格式：`性别/人种`
 
 ---
 
@@ -144,22 +143,22 @@ python label_gender_race.py -i D:\data\images -o D:\data\labels.json -c 0.8 --ra
 **多进程并行**（`--workers`）：
 ```bash
 # 使用 4 个进程并行处理（预计加速 2-3 倍）
-python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4
+python label_gender_race.py -i /data/images -o /data/labels -d opencv -w 4
 
 # 自动使用所有 CPU 核心
-python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w -1
+python label_gender_race.py -i /data/images -o /data/labels -d opencv -w -1
 ```
 
 **图片缩放**（`--resize`）：
 ```bash
 # 将大图缩放到长边 1024px 再处理（大幅减少像素量，加速 2-4 倍）
-python label_gender_race.py -i /data/images -o /data/labels.json -d opencv --resize 1024
+python label_gender_race.py -i /data/images -o /data/labels -d opencv --resize 1024
 ```
 
 **组合使用**（最大加速）：
 ```bash
 # 4 进程 + 缩放 + opencv 后端 → 10000 张预计 20-30 分钟
-python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 --resize 1024
+python label_gender_race.py -i /data/images -o /data/labels -d opencv -w 4 --resize 1024
 ```
 
 ### 5.3 加速效果预估
@@ -196,100 +195,96 @@ python label_gender_race.py -i /data/images -o /data/labels.json -d opencv -w 4 
 
 ---
 
-## 7. 输出格式
+## 7. 输出格式（v3：每张图一个 JSON）
 
-### 6.1 JSON 整体结构
+### 7.1 单图 JSON 格式
 
-```json
-{
-  "metadata": { ... },
-  "statistics": { ... },
-  "labels": [ ... ]
-}
-```
-
-### 6.2 metadata
-
-```json
-"metadata": {
-  "tool": "F5 Gender & Race Auto-Labeling Tool v2",
-  "model": "deepface",
-  "person_detector": "yolov8n",
-  "face_detector_backend": "retinaface",
-  "conf_threshold": 0.6,
-  "race_conf_threshold": 0.3,
-  "total_images": 34,
-  "total_persons": 35,
-  "total_faces": 35,
-  "errors": 0,
-  "elapsed_seconds": 144.6,
-  "fps": 0.23
-}
-```
-
-> 注：`race_conf_threshold` 显示为 `"argmax"` 表示使用了 argmax 模式。
-
-### 6.3 labels（逐图标注）
+每张图片输出一个独立的 JSON 文件到指定目录：
 
 ```json
 {
-  "image_path": "celeb_28102.jpg",
-  "image_abs_path": "D:\\...\\celeb_28102.jpg",
-  "person_count": 1,
+  "image_id": "000001",
+  "image_file": "../images/000001.jpg",
+  "mask_file": "../masks/000001.png",
+  "width": 1920,
+  "height": 1080,
   "persons": [
     {
-      "x1": 50, "y1": 30, "x2": 400, "y2": 600,
-      "label": "person",
-      "det_score": 0.9234
-    }
-  ],
-  "face_count": 1,
-  "faces": [
-    {
-      "x1": 101, "y1": 141, "x2": 539, "y2": 579,
-      "det_score": 0.9908,
-      "gender": 0, "gender_label": "Female", "gender_conf": 0.9908,
-      "raw_gender_scores": {"Woman": 0.9908, "Man": 0.0092},
-      "race": 1, "race_label": "White", "race_conf": 0.9912,
-      "raw_race_scores": {"asian": 0.0, "white": 0.9912, ...}
+      "id": 0,
+      "bbox": [520, 180, 340, 580],
+      "bbox_format": "xywh",
+      "race": 0,
+      "gender": 1
     }
   ]
 }
 ```
 
-### 6.4 枚举映射表
+> - `image_id` = 文件名去掉扩展名
+> - `bbox` = `[x, y, width, height]`（左上角坐标 + 宽高）
+> - `mask_file` 为占位路径，分割标注后续填充
+> - 同时生成 `_summary.json` 汇总统计
 
-**性别 (gender)**
+### 7.2 性别枚举
 
-| 值 | 标签 |
-|----|------|
-| 0 | Female |
-| 1 | Male |
-| 2 | Unknown |
-
-**人种 (race)**
-
-| 值 | 标签 | 含义 |
+| ID | 名称 | 说明 |
 |----|------|------|
-| 0 | Asian | 东亚/东南亚 |
-| 1 | White | 白人 |
-| 2 | Middle Eastern | 中东 |
-| 3 | Indian | 南亚/印度 |
-| 4 | Latino | 拉丁裔 |
-| 5 | Black | 黑人 |
-| 6 | Unknown | 未知 |
+| 0 | female | 女性 |
+| 1 | male_or_gender_unknown | 男性或未知（低于阈值时归为此类） |
+
+### 7.3 人种枚举（暂不改动，后续调整）
+
+| ID | 名称 |
+|----|------|
+| 0 | Asian |
+| 1 | White |
+| 2 | Middle Eastern |
+| 3 | Indian |
+| 4 | Latino |
+| 5 | Black |
+| 6 | Unknown |
+
+### 7.4 GPU 支持
+
+工具启动时自动检测本地 GPU：
+- **TensorFlow GPU**：自动启用显存按需增长
+- **PyTorch CUDA**：YOLOv8 自动调用
+- 控制台会打印 GPU 设备信息
+
+### 7.5 汇总文件 `_summary.json`
+
+```json
+{
+  "metadata": {
+    "tool": "F5 Gender & Race Auto-Labeling Tool v3",
+    "total_images": 34,
+    "total_persons": 35,
+    "errors": 0,
+    "elapsed_seconds": 144.6,
+    "fps": 0.23
+  },
+  "statistics": {
+    "total_persons": 35,
+    "female": 12,
+    "male_or_unknown": 23,
+    "asian": 3,
+    "white": 7,
+    "unknown_race": 5
+  }
+}
+```
 
 ---
 
 ## 8. 大规模数据集保护
 
-v2 包含以下保护机制：
+v3 包含以下保护机制：
 
 1. **单图异常隔离** — 每张图片独立 try-catch，一张失败不影响后续
-2. **定期检查点** — 每 50 张自动保存中间结果（`offline_package` 版支持自定义间隔）
-3. **Ctrl+C 中断保护** — 中断时自动保存已处理结果
+2. **单图输出** — 每张图处理完立即写入独立 JSON，崩溃不丢已处理结果
+3. **Ctrl+C 中断保护** — 中断时已处理的图片 JSON 已落盘
 4. **内存释放** — 每张图处理后释放内存，防止 OOM
-5. **错误统计** — 输出 JSON 中 `errors` 字段记录失败图片数
+5. **错误统计** — 汇总文件 `_summary.json` 中记录失败图片数
 
 ---
 
@@ -297,19 +292,18 @@ v2 包含以下保护机制：
 
 ### Q: 某张图片标注为 Unknown？
 
-置信度低于阈值。可降低阈值 `--conf 0.5` 或换用 `--detector retinaface`。
-人种 Unknown 还可使用 `--race-argmax` 完全消除。
+性别：低于阈值时归为 `male_or_gender_unknown`（ID=1），不会出现 Unknown。
+人种：置信度低于阈值标记为 Unknown。可降低阈值 `--race-conf 0.3` 或使用 `--race-argmax` 完全消除。
 
 ### Q: 检测到多个人体/人脸？
 
-工具自动检测所有人体和人脸，每个独立标注。`person_count` / `face_count` 显示数量。
+工具自动检测所有人体和人脸，通过中心点距离匹配后输出统一的 `persons` 数组。每个人有独立的 `id`、`bbox`、`race`、`gender`。
 
 ### Q: 人种置信度普遍偏低？
 
 正常现象。人种模型有 6 个类别，softmax 输出天然分散。解决方案：
 1. **降低人种阈值**：`--race-conf 0.3`（默认已是 0.3）
 2. **argmax 模式**：`--race-argmax` 直接取最高分，完全消除 Unknown
-3. **查看原始分布**：关注 `raw_race_scores` 字段了解模型的完整判断
 
 ### Q: 支持中文路径吗？
 
@@ -318,7 +312,9 @@ v2 包含以下保护机制：
 ### Q: 速度太慢？
 
 - 用 `opencv` 后端（最快）
-- 安装 GPU 版 TensorFlow：`pip install tensorflow[and-cuda]`
+- 安装 GPU 版 TensorFlow：`pip install tensorflow[and-cuda]`（工具会自动检测并调用 GPU）
+- 使用 `--workers` 多进程并行
+- 使用 `--resize` 缩放图片
 - 分批处理，多机并行
 
 ---
@@ -345,12 +341,14 @@ v2 包含以下保护机制：
 # 4. 安装依赖
 pip install -r offline_package/requirements.txt
 # 5. 运行
-python offline_package/scripts/label_gender_race.py -i <图片文件夹> -o <输出.json> -d retinaface
+python offline_package/scripts/label_gender_race.py -i <图片文件夹> -o <输出目录> -d retinaface
 ```
 
 离线版增强功能：
+- 每张图输出独立 JSON 文件，崩溃不丢已处理结果
 - 自定义检查点间隔：`--checkpoint 100`
 - 启动时自动验证所有模型文件是否存在
+- 自动检测并调用本地 GPU
 - 支持 Windows（`install.bat`）和 Linux（`install.sh`）
 
 详见 `offline_package/README.md`。

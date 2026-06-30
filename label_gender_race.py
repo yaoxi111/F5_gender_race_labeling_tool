@@ -1,10 +1,10 @@
 """
-F5 性别与人种自动标注工具 v2 (deepface 版)
+F5 性别与人种自动标注工具 v3 (deepface 版)
 人体检测 + 人脸检测 + 性别分类 + 人种分类: deepface + YOLOv8
-输出与 F5 ODOT FaceInfo 结构对齐的 JSON 标注文件。
+每张图输出一个独立 JSON 标注文件，格式与 F5 MTL 训练管线对齐。
 
 用法:
-    python label_gender_race.py -i <图片文件夹> -o <输出JSON> [-c 0.6] [--race-conf 0.3] [-d retinaface] [-w 4] [--resize 1024]
+    python label_gender_race.py -i <图片文件夹> -o <输出目录> [-c 0.6] [--race-conf 0.3] [-d retinaface] [-w 4] [--resize 1024]
 
 依赖:
     pip install deepface opencv-python tf-keras ultralytics
@@ -38,6 +38,49 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
+# ─────────── GPU 检测 ───────────
+
+def _detect_gpu():
+    """检测可用 GPU 并配置 TensorFlow。返回 GPU 信息字符串。"""
+    gpu_info = "未检测到 GPU"
+    try:
+        import tensorflow as tf
+        gpus = tf.config.list_physical_devices('GPU')
+        if gpus:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            gpu_info = f"TensorFlow GPU: {len(gpus)} 个设备"
+            gpu_names = [g.name for g in gpus]
+            print(f"[INFO] 检测到 GPU: {gpu_names}")
+        else:
+            print("[INFO] 未检测到 TensorFlow GPU，使用 CPU")
+    except Exception as e:
+        print(f"[INFO] GPU 检测跳过: {e}")
+
+    # 检测 PyTorch GPU（YOLOv8 会自动使用）
+    try:
+        import torch
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_info += f" | PyTorch CUDA: {gpu_name}"
+            print(f"[INFO] PyTorch CUDA 可用: {gpu_name}")
+        else:
+            print("[INFO] PyTorch CUDA 不可用")
+    except ImportError:
+        pass
+
+    return gpu_info
+
+_GPU_INFO = None
+
+
+def _get_gpu_info():
+    global _GPU_INFO
+    if _GPU_INFO is None:
+        _GPU_INFO = _detect_gpu()
+    return _GPU_INFO
+
+
 # ─────────── 常量 ───────────
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff"}
@@ -48,11 +91,12 @@ COLOR_MALE = (255, 128, 0)       # 蓝色 - 男性
 COLOR_FEMALE = (0, 80, 255)      # 红色 - 女性
 COLOR_UNKNOWN_G = (180, 0, 180)  # 紫色 - 未知性别
 
-# 性别映射: deepface 返回 "Woman"/"Man" -> F5 ODOT: 0=Female, 1=Male, 2=Unknown
+# 性别映射: deepface 返回 "Woman"/"Man" -> 0=female, 1=male_or_gender_unknown
+# 低于阈值时归为 1（male_or_gender_unknown）
 GENDER_MAP = {"Woman": 0, "Man": 1}
-GENDER_LABELS = ["Female", "Male", "Unknown"]
+GENDER_LABELS = ["female", "male_or_gender_unknown"]
 
-# 人种映射: deepface 返回 6 类 -> 整数 ID
+# 人种映射: deepface 返回 6 类 -> 整数 ID（暂不改动，后续调整）
 RACE_MAP = {
     "asian": 0,
     "white": 1,
@@ -155,17 +199,19 @@ def _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_im
     raw_gender_conf = max(gender_scores.values()) if gender_scores else 0.0
     gender_conf = float(raw_gender_conf) / 100.0
 
-    if gender_conf < conf_threshold:
-        gender_id = 2  # Unknown
+    # 0=female, 1=male_or_gender_unknown（低于阈值也归为 1）
+    if gender_label == "Woman" and gender_conf >= conf_threshold:
+        gender_id = 0  # female
     else:
-        gender_id = GENDER_MAP.get(gender_label, 2)
+        gender_id = 1  # male_or_gender_unknown
 
     # ── 人种（使用独立阈值或 argmax）──
     race_scores = r.get("race", {})
     race_id, race_conf = _classify_race(race_scores, race_conf_threshold, race_argmax)
 
     return {
-        "x1": x, "y1": y, "x2": x + w, "y2": y + h,
+        "bbox": [x, y, w, h],
+        "bbox_format": "xywh",
         "det_score": round(gender_conf, 4),
         # 性别
         "gender": gender_id,
@@ -226,11 +272,10 @@ def analyze_image(img, detector_backend, conf_threshold,
         for r in demographies:
             info = _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_up, h_up)
             if info is not None:
-                # 还原坐标到原图
-                info["x1"] = int(info["x1"] / scale_up)
-                info["y1"] = int(info["y1"] / scale_up)
-                info["x2"] = int(info["x2"] / scale_up)
-                info["y2"] = int(info["y2"] / scale_up)
+                # 还原坐标到原图 (bbox: [x, y, w, h])
+                bx, by, bw, bh = info["bbox"]
+                info["bbox"] = [int(bx / scale_up), int(by / scale_up),
+                                int(bw / scale_up), int(bh / scale_up)]
                 face_infos.append(info)
         del img_up
 
@@ -252,123 +297,6 @@ def analyze_image(img, detector_backend, conf_threshold,
                 face_infos.append(info)
 
     return face_infos
-    from deepface import DeepFace
-
-    try:
-        demographies = DeepFace.analyze(
-            img_path=img,
-            actions=["gender", "race"],
-            detector_backend=detector_backend,
-            enforce_detection=False,
-            silent=True,
-        )
-    except Exception:
-        return []
-
-    if not demographies:
-        return []
-
-    h_img, w_img = img.shape[:2]
-    face_infos = []
-    for r in demographies:
-        # ── 人脸框 ──
-        region = r.get("region", {})
-        x = region.get("x", 0)
-        y = region.get("y", 0)
-        w = region.get("w", 0)
-        h = region.get("h", 0)
-
-        # 过滤掉过小的人脸（宽或高 < 30 像素）
-        if w < 30 or h < 30:
-            continue
-
-        # 过滤掉过大的"人脸"（覆盖图片 70% 以上 = 检测失败，返回了整张图）
-        if w > w_img * 0.7 and h > h_img * 0.7:
-            continue
-
-        # ── 性别 ──
-        gender_label = r.get("dominant_gender", "Unknown")
-        gender_scores = r.get("gender", {})
-        raw_gender_conf = max(gender_scores.values()) if gender_scores else 0.0
-        gender_conf = float(raw_gender_conf) / 100.0
-
-        if gender_conf < conf_threshold:
-            gender_id = 2  # Unknown
-        else:
-            gender_id = GENDER_MAP.get(gender_label, 2)
-
-        # ── 人种 ──
-        race_label = r.get("dominant_race", "Unknown")
-        race_scores = r.get("race", {})
-        raw_race_conf = max(race_scores.values()) if race_scores else 0.0
-        race_conf = float(raw_race_conf) / 100.0
-
-        if race_conf < conf_threshold:
-            race_id = 6  # Unknown
-        else:
-            race_id = RACE_MAP.get(race_label.lower(), 6)
-
-        face_infos.append({
-            "x1": x, "y1": y, "x2": x + w, "y2": y + h,
-            "det_score": round(gender_conf, 4),
-            # 性别
-            "gender": gender_id,
-            "gender_label": GENDER_LABELS[gender_id],
-            "gender_conf": round(gender_conf, 4),
-            "raw_gender_scores": {
-                k: round(float(v) / 100.0, 4) for k, v in gender_scores.items()
-            },
-            # 人种
-            "race": race_id,
-            "race_label": RACE_LABELS[race_id],
-            "race_conf": round(race_conf, 4),
-            "raw_race_scores": {
-                k: round(float(v) / 100.0, 4) for k, v in race_scores.items()
-            },
-        })
-
-    # 如果 opencv 没检测到有效人脸，用 mtcnn 重试
-    if not face_infos and detector_backend == "opencv":
-        try:
-            demographies = DeepFace.analyze(
-                img_path=img,
-                actions=["gender", "race"],
-                detector_backend="mtcnn",
-                enforce_detection=False,
-                silent=True,
-            )
-            if demographies:
-                for r in demographies:
-                    region = r.get("region", {})
-                    x, y, w, h = region.get("x", 0), region.get("y", 0), region.get("w", 0), region.get("h", 0)
-                    if w < 30 or h < 30:
-                        continue
-                    if w > w_img * 0.7 and h > h_img * 0.7:
-                        continue
-                    gender_label = r.get("dominant_gender", "Unknown")
-                    gender_scores = r.get("gender", {})
-                    raw_gender_conf = max(gender_scores.values()) if gender_scores else 0.0
-                    gender_conf = float(raw_gender_conf) / 100.0
-                    gender_id = 2 if gender_conf < conf_threshold else GENDER_MAP.get(gender_label, 2)
-                    race_label = r.get("dominant_race", "Unknown")
-                    race_scores = r.get("race", {})
-                    raw_race_conf = max(race_scores.values()) if race_scores else 0.0
-                    race_conf = float(raw_race_conf) / 100.0
-                    race_id = 6 if race_conf < conf_threshold else RACE_MAP.get(race_label.lower(), 6)
-                    face_infos.append({
-                        "x1": x, "y1": y, "x2": x + w, "y2": y + h,
-                        "det_score": round(gender_conf, 4),
-                        "gender": gender_id, "gender_label": GENDER_LABELS[gender_id],
-                        "gender_conf": round(gender_conf, 4),
-                        "raw_gender_scores": {k: round(float(v) / 100.0, 4) for k, v in gender_scores.items()},
-                        "race": race_id, "race_label": RACE_LABELS[race_id],
-                        "race_conf": round(race_conf, 4),
-                        "raw_race_scores": {k: round(float(v) / 100.0, 4) for k, v in race_scores.items()},
-                    })
-        except Exception:
-            pass
-
-    return face_infos
 
 
 # ─────────── 可视化绘制 ───────────
@@ -385,7 +313,11 @@ def draw_results(img, face_infos, person_infos):
 
     # ── 先画人体框（绿色，最底层）──
     for p in person_infos:
-        px1, py1, px2, py2 = p["x1"], p["y1"], p["x2"], p["y2"]
+        if "bbox" in p:
+            bx, by, bw, bh = p["bbox"]
+            px1, py1, px2, py2 = bx, by, bx + bw, by + bh
+        else:
+            px1, py1, px2, py2 = p["x1"], p["y1"], p["x2"], p["y2"]
         cv2.rectangle(vis, (px1, py1), (px2, py2), COLOR_PERSON, 3)
 
         # 标签: "person"
@@ -399,17 +331,16 @@ def draw_results(img, face_infos, person_infos):
 
     # ── 再画人脸框（上层）──
     for face in face_infos:
-        x1, y1 = face["x1"], face["y1"]
-        x2, y2 = face["x2"], face["y2"]
+        bx, by, bw, bh = face["bbox"]
+        x1, y1 = bx, by
+        x2, y2 = bx + bw, by + bh
 
         # 性别决定框颜色
         gid = face["gender"]
         if gid == 0:
             color = COLOR_FEMALE
-        elif gid == 1:
-            color = COLOR_MALE
         else:
-            color = COLOR_UNKNOWN_G
+            color = COLOR_MALE
 
         # 画人脸框
         cv2.rectangle(vis, (x1, y1), (x2, y2), color, 3)
@@ -457,17 +388,21 @@ def resize_image(img, max_side):
 
 
 def scale_boxes(boxes, scale):
-    """将框坐标按比例还原到原图尺寸。"""
+    """将框坐标按比例还原到原图尺寸。支持 dict(bbox:[x,y,w,h]) 和 tuple(x1,y1,x2,y2,score)。"""
     if scale == 1.0:
         return boxes
     result = []
     for box in boxes:
-        if isinstance(box, dict):
+        if isinstance(box, dict) and "bbox" in box:
             b = dict(box)
-            b["x1"] = int(b["x1"] / scale)
-            b["y1"] = int(b["y1"] / scale)
-            b["x2"] = int(b["x2"] / scale)
-            b["y2"] = int(b["y2"] / scale)
+            bx, by, bw, bh = b["bbox"]
+            b["bbox"] = [int(bx / scale), int(by / scale), int(bw / scale), int(bh / scale)]
+            result.append(b)
+        elif isinstance(box, dict):
+            b = dict(box)
+            for k in ("x1", "y1", "x2", "y2"):
+                if k in b:
+                    b[k] = int(b[k] / scale)
             result.append(b)
         elif isinstance(box, (list, tuple)):
             result.append(tuple(int(v / scale) for v in box))
@@ -478,9 +413,68 @@ def scale_boxes(boxes, scale):
 
 # ─────────── 单图处理（可被多进程调用）────────────
 
+def _match_persons_faces(person_boxes, face_infos):
+    """
+    将人体检测框和人脸检测结果匹配，输出统一的 persons 数组。
+    每个 person 有 bbox(xywh) + race + gender。
+    """
+    result = []
+    used_faces = set()
+
+    for idx, (px1, py1, px2, py2, pscore) in enumerate(person_boxes):
+        pcx, pcy = (px1 + px2) / 2, (py1 + py2) / 2
+        best_face = None
+        best_dist = float('inf')
+
+        for fi, face in enumerate(face_infos):
+            if fi in used_faces:
+                continue
+            bx, by, bw, bh = face["bbox"]
+            fcx, fcy = bx + bw / 2, by + bh / 2
+            dist = ((pcx - fcx) ** 2 + (pcy - fcy) ** 2) ** 0.5
+            if dist < best_dist:
+                best_dist = dist
+                best_face = fi
+
+        pw, ph = px2 - px1, py2 - py1
+        if best_face is not None and best_dist < max(pw, ph) * 0.8:
+            used_faces.add(best_face)
+            face = face_infos[best_face]
+            result.append({
+                "id": idx,
+                "bbox": [int(px1), int(py1), int(pw), int(ph)],
+                "bbox_format": "xywh",
+                "race": face["race"],
+                "gender": face["gender"],
+            })
+        else:
+            result.append({
+                "id": idx,
+                "bbox": [int(px1), int(py1), int(pw), int(ph)],
+                "bbox_format": "xywh",
+                "race": 6,   # race_unknown
+                "gender": 1, # male_or_gender_unknown
+            })
+
+    # 未匹配到人体框的人脸，用其 bbox 作为 person bbox
+    for fi, face in enumerate(face_infos):
+        if fi in used_faces:
+            continue
+        bx, by, bw, bh = face["bbox"]
+        result.append({
+            "id": len(result),
+            "bbox": [int(bx), int(by), int(bw), int(bh)],
+            "bbox_format": "xywh",
+            "race": face["race"],
+            "gender": face["gender"],
+        })
+
+    return result
+
+
 def _process_single_image(args):
     """
-    处理单张图片，返回 (rel_path, abs_path, person_infos, face_infos, error_msg)。
+    处理单张图片，返回 (rel_path, abs_path, persons_output, error_msg)。
     用于多进程模式。
     """
     img_path, input_dir, detector_backend, conf_threshold, max_resize, race_conf_threshold, race_argmax = args
@@ -490,7 +484,9 @@ def _process_single_image(args):
         raw = np.fromfile(img_path, dtype=np.uint8)
         img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
         if img is None:
-            return (rel_path, os.path.abspath(img_path), [], [], "无法读取")
+            return (rel_path, os.path.abspath(img_path), [], "无法读取")
+
+        h_orig, w_orig = img.shape[:2]
 
         # 图片缩放
         scale = 1.0
@@ -498,13 +494,7 @@ def _process_single_image(args):
             img, scale = resize_image(img, max_resize)
 
         # 人体检测
-        persons = detect_persons(img)
-        person_infos = []
-        for (px1, py1, px2, py2, pscore) in persons:
-            person_infos.append({
-                "x1": px1, "y1": py1, "x2": px2, "y2": py2,
-                "label": "person", "det_score": round(pscore, 4),
-            })
+        person_boxes = detect_persons(img)
 
         # 人脸检测 + 分类
         face_infos = analyze_image(img, detector_backend, conf_threshold,
@@ -512,14 +502,18 @@ def _process_single_image(args):
 
         # 还原到原图坐标
         if scale != 1.0:
-            person_infos = scale_boxes(person_infos, scale)
+            person_boxes = [(int(x1/scale), int(y1/scale), int(x2/scale), int(y2/scale), s)
+                           for (x1, y1, x2, y2, s) in person_boxes]
             face_infos = scale_boxes(face_infos, scale)
 
+        # 匹配人体和人脸，输出统一 persons 数组
+        persons_output = _match_persons_faces(person_boxes, face_infos)
+
         del img, raw
-        return (rel_path, os.path.abspath(img_path), person_infos, face_infos, None)
+        return (rel_path, os.path.abspath(img_path), persons_output, w_orig, h_orig, None)
 
     except Exception as e:
-        return (rel_path, os.path.abspath(img_path), [], [], str(e))
+        return (rel_path, os.path.abspath(img_path), [], 0, 0, str(e))
 
 
 # ─────────── 主流程 ───────────
@@ -537,21 +531,17 @@ def collect_images(input_dir, skip_dirs=None):
     return images
 
 
-def _update_stats(stats, person_infos, face_infos):
-    """更新统计信息。"""
+def _update_stats(stats, persons_output):
+    """更新统计信息。persons_output 是统一的 persons 数组。"""
     stats["total_images"] += 1
-    stats["total_persons"] += len(person_infos)
-    stats["total_faces"] += len(face_infos)
-    if not person_infos:
+    stats["total_persons"] += len(persons_output)
+    if not persons_output:
         stats["no_person"] += 1
-    if not face_infos:
-        stats["no_face"] += 1
-    for f in face_infos:
-        g = f["gender"]
+    for p in persons_output:
+        g = p["gender"]
         if g == 0: stats["female"] += 1
-        elif g == 1: stats["male"] += 1
-        else: stats["unknown_gender"] += 1
-        rid = f["race"]
+        else: stats["male_or_unknown"] += 1
+        rid = p["race"]
         if rid == 0: stats["asian"] += 1
         elif rid == 1: stats["white"] += 1
         elif rid == 2: stats["middle_eastern"] += 1
@@ -561,10 +551,26 @@ def _update_stats(stats, person_infos, face_infos):
         else: stats["unknown_race"] += 1
 
 
-def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
+def _save_single_json(output_dir, image_id, rel_path, w, h, persons_output):
+    """保存单张图的标注 JSON 文件。"""
+    data = {
+        "image_id": image_id,
+        "image_file": rel_path,
+        "mask_file": f"../masks/{image_id}.png",
+        "width": w,
+        "height": h,
+        "persons": persons_output,
+    }
+    out_path = os.path.join(output_dir, f"{image_id}.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, default=_json_default)
+    return out_path
+
+
+def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
                  viz_dir=None, workers=1, max_resize=0,
                  race_conf_threshold=0.3, race_argmax=False):
-    skip = {"viz"}
+    skip = {"viz", "labels", "output"}
     images = collect_images(input_dir, skip_dirs=skip)
     if not images:
         print(f"[ERROR] 未找到图片: {input_dir}")
@@ -574,6 +580,11 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
     if workers == -1:
         workers = os.cpu_count() or 4
 
+    # 初始化 GPU 检测
+    gpu_info = _get_gpu_info()
+
+    os.makedirs(output_dir, exist_ok=True)
+
     print(f"[INFO] 共找到 {len(images)} 张图片")
     print(f"[INFO] 性别置信度阈值: {conf_threshold}")
     if race_argmax:
@@ -582,21 +593,21 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
         print(f"[INFO] 人种置信度阈值: {race_conf_threshold}")
     print(f"[INFO] 检测后端: {detector_backend}")
     print(f"[INFO] 并行进程数: {workers}")
+    print(f"[INFO] GPU: {gpu_info}")
     if max_resize > 0:
         print(f"[INFO] 图片缩放: 长边不超过 {max_resize}px")
-    print(f"[INFO] 输出文件: {output_path}")
+    print(f"[INFO] 输出目录: {output_dir}")
     if viz_dir:
         os.makedirs(viz_dir, exist_ok=True)
         print(f"[INFO] 可视化输出: {viz_dir}")
     print("-" * 60)
 
-    all_labels = []
     stats = {
-        "total_images": 0, "total_faces": 0, "total_persons": 0,
-        "male": 0, "female": 0, "unknown_gender": 0,
+        "total_images": 0, "total_persons": 0,
+        "female": 0, "male_or_unknown": 0,
         "asian": 0, "white": 0, "middle_eastern": 0,
         "indian": 0, "latino": 0, "black": 0, "unknown_race": 0,
-        "no_face": 0, "no_person": 0, "errors": 0,
+        "no_person": 0, "errors": 0,
     }
     start_time = time.time()
     total = len(images)
@@ -612,48 +623,48 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
         ]
 
         print(f"[INFO] 启动 {workers} 个进程并行处理...")
+        all_viz_data = []
         with mp.Pool(processes=workers) as pool:
-            for i, (rel_path, abs_path, person_infos, face_infos, error) in enumerate(
-                pool.imap_unordered(_process_single_image, task_args)
-            ):
+            for i, result in enumerate(pool.imap_unordered(_process_single_image, task_args)):
+                rel_path, abs_path, persons_output, w, h, error = result
+                image_id = Path(rel_path).stem
+
                 if error:
                     print(f"[{i + 1}/{total}] {rel_path} ... 错误: {error}")
                     stats["errors"] += 1
                 else:
-                    all_labels.append({
-                        "image_path": rel_path,
-                        "image_abs_path": abs_path,
-                        "person_count": len(person_infos),
-                        "persons": person_infos,
-                        "face_count": len(face_infos),
-                        "faces": face_infos,
-                    })
-                    _update_stats(stats, person_infos, face_infos)
+                    _save_single_json(output_dir, image_id, f"../images/{Path(rel_path).name}", w, h, persons_output)
+                    _update_stats(stats, persons_output)
+                    all_viz_data.append((abs_path, persons_output))
 
-                    parts = []
-                    if person_infos:
-                        parts.append(f"{len(person_infos)}个人体")
-                    if face_infos:
-                        parts.append(f"{len(face_infos)}张人脸")
-                    if not parts:
-                        parts.append("未检测到")
-                    print(f"[{i + 1}/{total}] {rel_path} ... {', '.join(parts)}")
+                    n = len(persons_output)
+                    print(f"[{i + 1}/{total}] {rel_path} ... {n}个人" if n else f"[{i + 1}/{total}] {rel_path} ... 未检测到")
 
-                # 定期保存检查点
                 if (i + 1) % 100 == 0:
                     print(f"  [CHECKPOINT] 已处理 {i + 1}/{total}")
 
         # 多进程模式下单独保存可视化
         if viz_dir:
             print("[INFO] 生成可视化图片...")
-            for label in all_labels:
+            for abs_path, persons_output in all_viz_data:
                 try:
-                    img_path = label["image_abs_path"]
-                    raw = np.fromfile(img_path, dtype=np.uint8)
+                    raw = np.fromfile(abs_path, dtype=np.uint8)
                     img = cv2.imdecode(raw, cv2.IMREAD_COLOR)
                     if img is not None:
-                        vis_img = draw_results(img, label["faces"], label["persons"])
-                        vis_path = os.path.join(viz_dir, os.path.basename(img_path))
+                        # 从 persons_output 还原 face_infos 用于可视化
+                        face_infos = []
+                        for p in persons_output:
+                            bx, by, bw, bh = p["bbox"]
+                            face_infos.append({
+                                "bbox": [bx, by, bw, bh],
+                                "gender": p["gender"],
+                                "gender_label": GENDER_LABELS[p["gender"]],
+                                "race": p["race"],
+                                "race_label": RACE_LABELS[p["race"]] if p["race"] < len(RACE_LABELS) else "Unknown",
+                                "gender_conf": 0, "race_conf": 0,
+                            })
+                        vis_img = draw_results(img, face_infos, [])
+                        vis_path = os.path.join(viz_dir, os.path.basename(abs_path))
                         _, ext = os.path.splitext(vis_path)
                         cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
                         del vis_img, img, raw
@@ -661,9 +672,10 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
                     pass
 
     else:
-        # ── 单进程模式（原始流程）──
+        # ── 单进程模式 ──
         for i, img_path in enumerate(images):
             rel_path = os.path.relpath(img_path, input_dir)
+            image_id = Path(rel_path).stem
             print(f"[{i + 1}/{total}] {rel_path}", end=" ... ", flush=True)
 
             try:
@@ -674,19 +686,15 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
                     stats["errors"] += 1
                     continue
 
+                h_orig, w_orig = img.shape[:2]
+
                 # 图片缩放
                 scale = 1.0
                 if max_resize > 0:
                     img, scale = resize_image(img, max_resize)
 
                 # 人体检测
-                persons = detect_persons(img)
-                person_infos = []
-                for (px1, py1, px2, py2, pscore) in persons:
-                    person_infos.append({
-                        "x1": px1, "y1": py1, "x2": px2, "y2": py2,
-                        "label": "person", "det_score": round(pscore, 4),
-                    })
+                person_boxes = detect_persons(img)
 
                 # 人脸检测 + 分类
                 face_infos = analyze_image(img, detector_backend, conf_threshold,
@@ -694,17 +702,35 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
 
                 # 还原到原图坐标
                 if scale != 1.0:
-                    person_infos = scale_boxes(person_infos, scale)
+                    person_boxes = [(int(x1/scale), int(y1/scale), int(x2/scale), int(y2/scale), s)
+                                   for (x1, y1, x2, y2, s) in person_boxes]
                     face_infos = scale_boxes(face_infos, scale)
 
-                # 绘制可视化（在原图上绘制）
-                if viz_dir and (face_infos or person_infos):
+                # 匹配人体和人脸
+                persons_output = _match_persons_faces(person_boxes, face_infos)
+
+                # 保存单图 JSON
+                _save_single_json(output_dir, image_id, f"../images/{Path(rel_path).name}",
+                                  w_orig, h_orig, persons_output)
+
+                # 绘制可视化
+                if viz_dir and persons_output:
                     try:
-                        # 重新读取原图用于可视化
                         raw_orig = np.fromfile(img_path, dtype=np.uint8)
                         img_orig = cv2.imdecode(raw_orig, cv2.IMREAD_COLOR)
                         if img_orig is not None:
-                            vis_img = draw_results(img_orig, face_infos, person_infos)
+                            face_infos_vis = []
+                            for p in persons_output:
+                                bx, by, bw, bh = p["bbox"]
+                                face_infos_vis.append({
+                                    "bbox": [bx, by, bw, bh],
+                                    "gender": p["gender"],
+                                    "gender_label": GENDER_LABELS[p["gender"]],
+                                    "race": p["race"],
+                                    "race_label": RACE_LABELS[p["race"]] if p["race"] < len(RACE_LABELS) else "Unknown",
+                                    "gender_conf": 0, "race_conf": 0,
+                                })
+                            vis_img = draw_results(img_orig, face_infos_vis, [])
                             vis_path = os.path.join(viz_dir, os.path.basename(img_path))
                             _, ext = os.path.splitext(vis_path)
                             cv2.imencode(ext if ext else ".jpg", vis_img)[1].tofile(vis_path)
@@ -713,27 +739,14 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
                         print(f"[WARN] 可视化保存失败: {ve}", end=" ")
 
                 del img, raw
+                _update_stats(stats, persons_output)
 
-                all_labels.append({
-                    "image_path": rel_path,
-                    "image_abs_path": os.path.abspath(img_path),
-                    "person_count": len(person_infos),
-                    "persons": person_infos,
-                    "face_count": len(face_infos),
-                    "faces": face_infos,
-                })
-
-                _update_stats(stats, person_infos, face_infos)
-
-                parts = []
-                if person_infos:
-                    parts.append(f"{len(person_infos)}个人体")
-                if face_infos:
-                    face_summary = [f"{f['gender_label']}/{f['race_label']}" for f in face_infos]
-                    parts.append(f"{len(face_infos)}张人脸 -> {face_summary}")
-                if not parts:
-                    parts.append("未检测到")
-                print(", ".join(parts))
+                n = len(persons_output)
+                if n:
+                    summary = [f"{GENDER_LABELS[p['gender']]}/{RACE_LABELS[p['race']] if p['race'] < len(RACE_LABELS) else '?'}" for p in persons_output]
+                    print(f"{n}个人 -> {summary}")
+                else:
+                    print("未检测到")
 
             except KeyboardInterrupt:
                 print("\n[WARN] 用户中断，保存已处理结果...")
@@ -748,27 +761,27 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
 
     elapsed = time.time() - start_time
 
-    output = {
+    # 保存汇总文件
+    summary = {
         "metadata": {
-            "tool": "F5 Gender & Race Auto-Labeling Tool v2",
+            "tool": "F5 Gender & Race Auto-Labeling Tool v3",
             "model": "deepface",
             "person_detector": "yolov8n",
             "face_detector_backend": detector_backend,
             "conf_threshold": conf_threshold,
             "race_conf_threshold": race_conf_threshold if not race_argmax else "argmax",
+            "gpu": gpu_info,
             "total_images": stats["total_images"],
             "total_persons": stats["total_persons"],
-            "total_faces": stats["total_faces"],
             "errors": stats["errors"],
             "elapsed_seconds": round(elapsed, 2),
             "fps": round(stats["total_images"] / elapsed, 2) if elapsed > 0 else 0,
         },
         "statistics": {
-            "persons": stats["total_persons"],
+            "total_persons": stats["total_persons"],
             "no_person_images": stats["no_person"],
-            "male": stats["male"],
             "female": stats["female"],
-            "unknown_gender": stats["unknown_gender"],
+            "male_or_unknown": stats["male_or_unknown"],
             "asian": stats["asian"],
             "white": stats["white"],
             "middle_eastern": stats["middle_eastern"],
@@ -776,31 +789,29 @@ def run_labeling(input_dir, output_path, conf_threshold, detector_backend,
             "latino": stats["latino"],
             "black": stats["black"],
             "unknown_race": stats["unknown_race"],
-            "no_face_images": stats["no_face"],
             "error_images": stats["errors"],
         },
-        "labels": all_labels,
     }
 
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2, default=_json_default)
+    summary_path = os.path.join(output_dir, "_summary.json")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2, default=_json_default)
 
     print("=" * 60)
     print(f"[DONE] 标注完成!")
     print(f"  图片总数: {stats['total_images']} (错误: {stats['errors']})")
     print(f"  人体总数: {stats['total_persons']} (无人体: {stats['no_person']})")
-    print(f"  人脸总数: {stats['total_faces']} (无人脸: {stats['no_face']})")
-    print(f"  性别 - Male: {stats['male']}, Female: {stats['female']}, Unknown: {stats['unknown_gender']}")
+    print(f"  性别 - female: {stats['female']}, male_or_unknown: {stats['male_or_unknown']}")
     print(f"  人种 - Asian: {stats['asian']}, White: {stats['white']}, Black: {stats['black']}, Unknown: {stats['unknown_race']}")
     print(f"  耗时: {elapsed:.1f}s ({stats['total_images'] / elapsed:.1f} fps)")
-    print(f"  输出: {output_path}")
+    print(f"  输出目录: {output_dir}")
+    print(f"  汇总文件: {summary_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="F5 性别与人种自动标注工具 v2 (deepface + 人体检测)")
+    parser = argparse.ArgumentParser(description="F5 性别与人种自动标注工具 v3 (deepface + 人体检测)")
     parser.add_argument("--input", "-i", required=True, help="输入图片文件夹路径")
-    parser.add_argument("--output", "-o", default="./output/gender_race_labels.json", help="输出 JSON 文件路径")
+    parser.add_argument("--output", "-o", default="./output_labels", help="输出目录路径 (每张图一个JSON)")
     parser.add_argument("--conf", "-c", type=float, default=0.6, help="性别置信度阈值 (默认: 0.6)")
     parser.add_argument("--race-conf", type=float, default=0.3, help="人种置信度阈值 (默认: 0.3, 人种模型置信度天然较低)")
     parser.add_argument("--race-argmax", action="store_true", help="人种分类使用 argmax 模式（直接取最高分，完全消除 Unknown）")
