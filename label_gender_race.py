@@ -99,16 +99,17 @@ COLOR_UNKNOWN_G = (180, 0, 180)  # 紫色 - 未知性别
 GENDER_MAP = {"Woman": 0, "Man": 1}
 GENDER_LABELS = ["female", "male_or_gender_unknown"]
 
-# 人种映射: deepface 返回 6 类 -> 整数 ID（暂不改动，后续调整）
-RACE_MAP = {
-    "asian": 0,
-    "white": 1,
-    "middle eastern": 2,
-    "indian": 3,
-    "latino": 4,
-    "black": 5,
+# 人种映射: deepface 返回 6 类 -> 合并为 4 类
+# 0=yellow(Asian+Indian), 1=white(White+Middle Eastern), 2=brown(Black+Latino), 3=race_unknown
+RACE_MAP_DEEPFACE = {
+    "asian": 0,           # -> yellow
+    "white": 1,           # -> white
+    "middle eastern": 1,  # -> white
+    "indian": 0,          # -> yellow
+    "latino": 2,          # -> brown
+    "black": 2,           # -> brown
 }
-RACE_LABELS = ["Asian", "White", "Middle Eastern", "Indian", "Latino", "Black", "Unknown"]
+RACE_LABELS = ["yellow", "white", "brown", "race_unknown"]
 
 
 def _json_default(obj):
@@ -161,7 +162,7 @@ def _classify_race(race_scores, race_conf_threshold, race_argmax):
     返回 (race_id, race_conf)。
     """
     if not race_scores:
-        return 6, 0.0
+        return 3, 0.0  # race_unknown
 
     # 找到最高分的类别
     max_label = max(race_scores, key=race_scores.get)
@@ -169,12 +170,12 @@ def _classify_race(race_scores, race_conf_threshold, race_argmax):
 
     if race_argmax:
         # argmax 模式：直接取最高分，不设阈值
-        return RACE_MAP.get(max_label.lower(), 6), max_score
+        return RACE_MAP_DEEPFACE.get(max_label.lower(), 3), max_score
 
     # 阈值模式：使用人种独立阈值
     if max_score < race_conf_threshold:
-        return 6, max_score  # Unknown
-    return RACE_MAP.get(max_label.lower(), 6), max_score
+        return 3, max_score  # race_unknown
+    return RACE_MAP_DEEPFACE.get(max_label.lower(), 3), max_score
 
 
 def _extract_face_info(r, conf_threshold, race_conf_threshold, race_argmax, w_img, h_img):
@@ -449,14 +450,18 @@ def _match_persons_faces(person_boxes, face_infos):
                 "bbox_format": "xywh",
                 "race": face["race"],
                 "gender": face["gender"],
+                "gender_conf": face.get("gender_conf", 0),
+                "race_conf": face.get("race_conf", 0),
             })
         else:
             result.append({
                 "id": idx,
                 "bbox": [int(px1), int(py1), int(pw), int(ph)],
                 "bbox_format": "xywh",
-                "race": 6,   # race_unknown
+                "race": 3,   # race_unknown
                 "gender": 1, # male_or_gender_unknown
+                "gender_conf": 0,
+                "race_conf": 0,
             })
 
     # 未匹配到人体框的人脸，用其 bbox 作为 person bbox
@@ -470,6 +475,8 @@ def _match_persons_faces(person_boxes, face_infos):
             "bbox_format": "xywh",
             "race": face["race"],
             "gender": face["gender"],
+            "gender_conf": face.get("gender_conf", 0),
+            "race_conf": face.get("race_conf", 0),
         })
 
     return result
@@ -545,13 +552,10 @@ def _update_stats(stats, persons_output):
         if g == 0: stats["female"] += 1
         else: stats["male_or_unknown"] += 1
         rid = p["race"]
-        if rid == 0: stats["asian"] += 1
+        if rid == 0: stats["yellow"] += 1
         elif rid == 1: stats["white"] += 1
-        elif rid == 2: stats["middle_eastern"] += 1
-        elif rid == 3: stats["indian"] += 1
-        elif rid == 4: stats["latino"] += 1
-        elif rid == 5: stats["black"] += 1
-        else: stats["unknown_race"] += 1
+        elif rid == 2: stats["brown"] += 1
+        else: stats["race_unknown"] += 1
 
 
 def _save_single_json(output_dir, image_id, rel_path, w, h, persons_output):
@@ -608,8 +612,7 @@ def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
     stats = {
         "total_images": 0, "total_persons": 0,
         "female": 0, "male_or_unknown": 0,
-        "asian": 0, "white": 0, "middle_eastern": 0,
-        "indian": 0, "latino": 0, "black": 0, "unknown_race": 0,
+        "yellow": 0, "white": 0, "brown": 0, "race_unknown": 0,
         "no_person": 0, "errors": 0,
     }
     start_time = time.time()
@@ -664,7 +667,8 @@ def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
                                 "gender_label": GENDER_LABELS[p["gender"]],
                                 "race": p["race"],
                                 "race_label": RACE_LABELS[p["race"]] if p["race"] < len(RACE_LABELS) else "Unknown",
-                                "gender_conf": 0, "race_conf": 0,
+                                "gender_conf": p.get("gender_conf", 0),
+                                "race_conf": p.get("race_conf", 0),
                             })
                         vis_img = draw_results(img, face_infos, [])
                         vis_path = os.path.join(viz_dir, os.path.basename(abs_path))
@@ -731,7 +735,8 @@ def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
                                     "gender_label": GENDER_LABELS[p["gender"]],
                                     "race": p["race"],
                                     "race_label": RACE_LABELS[p["race"]] if p["race"] < len(RACE_LABELS) else "Unknown",
-                                    "gender_conf": 0, "race_conf": 0,
+                                    "gender_conf": p.get("gender_conf", 0),
+                                    "race_conf": p.get("race_conf", 0),
                                 })
                             vis_img = draw_results(img_orig, face_infos_vis, [])
                             vis_path = os.path.join(viz_dir, os.path.basename(img_path))
@@ -785,13 +790,10 @@ def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
             "no_person_images": stats["no_person"],
             "female": stats["female"],
             "male_or_unknown": stats["male_or_unknown"],
-            "asian": stats["asian"],
+            "yellow": stats["yellow"],
             "white": stats["white"],
-            "middle_eastern": stats["middle_eastern"],
-            "indian": stats["indian"],
-            "latino": stats["latino"],
-            "black": stats["black"],
-            "unknown_race": stats["unknown_race"],
+            "brown": stats["brown"],
+            "race_unknown": stats["race_unknown"],
             "error_images": stats["errors"],
         },
     }
@@ -805,7 +807,7 @@ def run_labeling(input_dir, output_dir, conf_threshold, detector_backend,
     print(f"  图片总数: {stats['total_images']} (错误: {stats['errors']})")
     print(f"  人体总数: {stats['total_persons']} (无人体: {stats['no_person']})")
     print(f"  性别 - female: {stats['female']}, male_or_unknown: {stats['male_or_unknown']}")
-    print(f"  人种 - Asian: {stats['asian']}, White: {stats['white']}, Black: {stats['black']}, Unknown: {stats['unknown_race']}")
+    print(f"  人种 - yellow: {stats['yellow']}, white: {stats['white']}, brown: {stats['brown']}, race_unknown: {stats['race_unknown']}")
     print(f"  耗时: {elapsed:.1f}s ({stats['total_images'] / elapsed:.1f} fps)")
     print(f"  输出目录: {output_dir}")
     print(f"  汇总文件: {summary_path}")
