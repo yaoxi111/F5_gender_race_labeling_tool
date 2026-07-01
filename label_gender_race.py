@@ -98,6 +98,7 @@ COLOR_UNKNOWN_G = (180, 0, 180)  # 紫色 - 未知性别
 # 低于阈值时归为 1（male_or_gender_unknown）
 GENDER_MAP = {"Woman": 0, "Man": 1}
 GENDER_LABELS = ["female", "male_or_gender_unknown"]
+GENDER_SHORT = ["F", "M"]  # 可视化缩写
 
 # 人种映射: deepface 返回 6 类 -> 合并为 4 类
 # 0=yellow(Asian+Indian), 1=white(White+Middle Eastern), 2=brown(Black+Latino), 3=race_unknown
@@ -110,6 +111,7 @@ RACE_MAP_DEEPFACE = {
     "black": 2,           # -> brown
 }
 RACE_LABELS = ["yellow", "white", "brown", "race_unknown"]
+RACE_SHORT = ["Y", "W", "B", "?"]  # 可视化缩写
 
 
 def _json_default(obj):
@@ -349,10 +351,12 @@ def draw_results(img, face_infos, person_infos):
         # 画人脸框
         cv2.rectangle(vis, (x1, y1), (x2, y2), color, 3)
 
-        # 标签文字: "female/white"
-        g_label = face["gender_label"]
-        r_label = face["race_label"]
-        label = f"{g_label}/{r_label}"
+        # 标签文字: "F/W" (缩写，避免过长)
+        g_idx = face["gender"]
+        r_idx = face["race"]
+        g_short = GENDER_SHORT[g_idx] if g_idx < len(GENDER_SHORT) else "?"
+        r_short = RACE_SHORT[r_idx] if r_idx < len(RACE_SHORT) else "?"
+        label = f"{g_short}/{r_short}"
 
         (tw, th), _ = cv2.getTextSize(label, font, font_scale, thickness)
         box_w = tw + 10
