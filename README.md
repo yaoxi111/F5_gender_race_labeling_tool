@@ -352,3 +352,29 @@ python offline_package/scripts/label_gender_race.py -i <图片文件夹> -o <输
 - 支持 Windows（`install.bat`）和 Linux（`install.sh`）
 
 详见 `offline_package/README.md`。
+
+---
+
+## 12. GUI 图形界面工具
+
+v3 新增 `label_gui.py` 图形界面，无需命令行即可操作。
+
+### 启动
+
+```bash
+python label_gui.py
+```
+
+### 功能
+
+- **路径设置**：输入目录、输出目录、可视化目录（输出目录不存在自动创建）
+- **标注内容开关**：人体检测 / 人脸检测 / 性别分类 / 人种分类，可独立开关
+- **精度预设**：高精度 / 均衡 / 快速 / argmax 四种模式一键切换
+- **参数调节**：检测后端、性别阈值、人种阈值、并行进程数
+- **标注预览**：完成后可翻页浏览可视化结果
+
+### 依赖
+
+```bash
+pip install Pillow
+```
