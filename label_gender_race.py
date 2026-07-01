@@ -532,8 +532,11 @@ def collect_images(input_dir, skip_dirs=None):
     skip = set(skip_dirs) if skip_dirs else set()
     images = []
     for root, dirs, files in os.walk(input_dir):
-        # 排除指定目录
-        dirs[:] = [d for d in dirs if d not in skip]
+        # 排除指定目录（精确匹配 + 前缀匹配 viz_*, labels_*, output_*）
+        dirs[:] = [d for d in dirs if d not in skip
+                   and not d.startswith("viz_")
+                   and not d.startswith("labels_")
+                   and not d.startswith("output_")]
         for f in files:
             if Path(f).suffix.lower() in IMAGE_EXTS:
                 images.append(os.path.join(root, f))
