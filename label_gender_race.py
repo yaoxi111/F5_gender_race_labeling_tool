@@ -349,18 +349,14 @@ def draw_results(img, face_infos, person_infos):
         # 画人脸框
         cv2.rectangle(vis, (x1, y1), (x2, y2), color, 3)
 
-        # 标签文字: "Male/White 98%"
+        # 标签文字: "female/white"
         g_label = face["gender_label"]
         r_label = face["race_label"]
-        g_conf = face["gender_conf"]
-        r_conf = face["race_conf"]
-        line1 = f"{g_label}/{r_label}"
-        line2 = f"{g_conf*100:.0f}%/{r_conf*100:.0f}%"
+        label = f"{g_label}/{r_label}"
 
-        (tw1, th1), _ = cv2.getTextSize(line1, font, font_scale, thickness)
-        (tw2, th2), _ = cv2.getTextSize(line2, font, font_scale, thickness)
-        box_w = max(tw1, tw2) + 10
-        box_h = th1 + th2 + 16
+        (tw, th), _ = cv2.getTextSize(label, font, font_scale, thickness)
+        box_w = tw + 10
+        box_h = th + 10
 
         label_y1 = y1 - box_h - 4
         if label_y1 < 0:
@@ -368,8 +364,7 @@ def draw_results(img, face_infos, person_infos):
         label_y2 = label_y1 + box_h
 
         cv2.rectangle(vis, (x1, label_y1), (x1 + box_w, label_y2), color, -1)
-        cv2.putText(vis, line1, (x1 + 5, label_y1 + th1 + 4), font, font_scale, (255, 255, 255), thickness)
-        cv2.putText(vis, line2, (x1 + 5, label_y1 + th1 + th2 + 12), font, font_scale, (255, 255, 255), thickness)
+        cv2.putText(vis, label, (x1 + 5, label_y1 + th + 4), font, font_scale, (255, 255, 255), thickness)
 
     return vis
 
